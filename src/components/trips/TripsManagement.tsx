@@ -1,108 +1,135 @@
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Table, TableHeader, TableBody, TableRow, TableCell } from "@/components/ui/table";
 import { Plus, Search, MapPin, Calendar, User, Truck } from "lucide-react";
-import { useState } from "react";
+import { Dialog, DialogTrigger, DialogContent, DialogClose } from "@/components/ui/dialog";
 
 export const TripsManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState({
+    customer_id: "",
+    origin: "",
+    destination: "",
+    driver_id: "",
+    truck_id: "",
+    scheduled_date: "",
+    distance: "",
+    cost: "",
+    rate_usd: "",
+    driver_pay: "",
+    mileage: "",
+    road_tolls: "",
+    comments: "",
+    photo: null,
+  });
+  const [maintenanceRows, setMaintenanceRows] = useState([{ item: "", cost: "" }]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const trips = [
-    { 
-      id: "TRP-001", 
-      customer: "ABC Corporation", 
-      origin: "New York, NY", 
-      destination: "Los Angeles, CA",
-      driver: "John Smith",
-      truck: "ABC-123",
-      scheduledDate: "2024-02-25",
-      status: "Completed",
-      distance: "2,800 miles"
-    },
-    { 
-      id: "TRP-002", 
-      customer: "XYZ Limited", 
-      origin: "Chicago, IL", 
-      destination: "Miami, FL",
-      driver: "Sarah Johnson",
-      truck: "XYZ-456",
-      scheduledDate: "2024-02-26",
-      status: "In Progress",
-      distance: "1,200 miles"
-    },
-    { 
-      id: "TRP-003", 
-      customer: "Tech Solutions Inc", 
-      origin: "San Francisco, CA", 
-      destination: "Seattle, WA",
-      driver: "Mike Davis",
-      truck: "DEF-789",
-      scheduledDate: "2024-02-27",
-      status: "Scheduled",
-      distance: "800 miles"
-    },
-    { 
-      id: "TRP-004", 
-      customer: "Global Enterprises", 
-      origin: "Houston, TX", 
-      destination: "Denver, CO",
-      driver: "Lisa Wilson",
-      truck: "JKL-345",
-      scheduledDate: "2024-02-28",
-      status: "Scheduled",
-      distance: "900 miles"
-    },
-    { 
-      id: "TRP-005", 
-      customer: "Prime Industries", 
-      origin: "Boston, MA", 
-      destination: "Atlanta, GA",
-      driver: "Tom Brown",
-      truck: "GHI-012",
-      scheduledDate: "2024-02-24",
-      status: "Completed",
-      distance: "1,100 miles"
-    }
+    { id: "TRP-001", customer: "ABC Corporation", origin: "New York, NY", destination: "Los Angeles, CA", driver: "John Smith", truck: "ABC-123", scheduledDate: "2024-02-25", status: "Completed", distance: "2,800 miles" },
+    { id: "TRP-002", customer: "XYZ Ltd", origin: "Chicago, IL", destination: "Houston, TX", driver: "Sarah Lee", truck: "XYZ-456", scheduledDate: "2024-03-01", status: "Scheduled", distance: "1,080 miles" }
   ];
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Completed': return 'default';
-      case 'In Progress': return 'destructive';
-      case 'Scheduled': return 'secondary';
-      case 'Cancelled': return 'outline';
-      default: return 'secondary';
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value, files } = e.target as HTMLInputElement;
+    if (name === "photo" && files) {
+      setForm((prev) => ({ ...prev, photo: files[0] }));
+    } else {
+      setForm((prev) => ({ ...prev, [name]: value }));
     }
   };
 
-  const filteredTrips = trips.filter(trip =>
-    trip.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    trip.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    trip.driver.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    trip.origin.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    trip.destination.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleMaintenanceChange = (idx: number, field: string, value: string) => {
+    setMaintenanceRows((rows) => rows.map((row, i) => i === idx ? { ...row, [field]: value } : row));
+  };
+  const addMaintenanceRow = () => setMaintenanceRows((rows) => [...rows, { item: "", cost: "" }]);
+  const removeMaintenanceRow = (idx: number) => setMaintenanceRows((rows) => rows.filter((_, i) => i !== idx));
 
   return (
     <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Trip Management</h1>
-          <p className="text-muted-foreground">Plan, track and manage all transportation activities</p>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Trip Management</h1>
+            <p className="text-muted-foreground">Plan, track and manage all transportation activities</p>
+          </div>
+          <DialogTrigger asChild>
+            <Button className="bg-gradient-primary hover:bg-gradient-primary/90 shadow-glow">
+              <Plus className="h-4 w-4 mr-2" />
+              Schedule Trip
+            </Button>
+          </DialogTrigger>
         </div>
-        <Button className="bg-gradient-primary hover:bg-gradient-primary/90 shadow-glow">
-          <Plus className="h-4 w-4 mr-2" />
-          Schedule Trip
-        </Button>
-      </div>
-
+        <DialogContent>
+          <form className="space-y-4">
+            <h2 className="text-lg font-bold">Schedule New Trip</h2>
+            <Input name="customer_id" placeholder="Customer ID" value={form.customer_id} onChange={handleFormChange} required />
+            <Input name="origin" placeholder="Origin" value={form.origin} onChange={handleFormChange} required />
+            <Input name="destination" placeholder="Destination" value={form.destination} onChange={handleFormChange} required />
+            <Input name="driver_id" placeholder="Driver ID" value={form.driver_id} onChange={handleFormChange} required />
+            <Input name="truck_id" placeholder="Truck ID" value={form.truck_id} onChange={handleFormChange} required />
+            <Input name="scheduled_date" type="date" value={form.scheduled_date} onChange={handleFormChange} required />
+            <Input name="distance" placeholder="Distance (miles)" value={form.distance} onChange={handleFormChange} required />
+            <Input name="cost" placeholder="Trip Cost" value={form.cost} onChange={handleFormChange} required />
+            <Input name="rate_usd" placeholder="Rate (USD)" value={form.rate_usd} onChange={handleFormChange} required />
+            <Input name="driver_pay" placeholder="Driver's Pay" value={form.driver_pay} onChange={handleFormChange} required />
+            <Input name="mileage" placeholder="Mileage" value={form.mileage} onChange={handleFormChange} required />
+            <Input name="road_tolls" placeholder="Road Tolls" value={form.road_tolls} onChange={handleFormChange} required />
+            <Textarea name="comments" placeholder="Comments (optional)" value={form.comments} onChange={handleFormChange} />
+            <div>
+              <label className="block mb-1">Maintenance (table)</label>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableCell>Item</TableCell>
+                    <TableCell>Cost</TableCell>
+                    <TableCell></TableCell>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {maintenanceRows.map((row, idx) => (
+                    <TableRow key={idx}>
+                      <TableCell>
+                        <Input value={row.item} onChange={e => handleMaintenanceChange(idx, "item", e.target.value)} placeholder="Maintenance Item" />
+                      </TableCell>
+                      <TableCell>
+                        <Input value={row.cost} onChange={e => handleMaintenanceChange(idx, "cost", e.target.value)} placeholder="Cost" />
+                      </TableCell>
+                      <TableCell>
+                        <Button type="button" variant="destructive" onClick={() => removeMaintenanceRow(idx)}>Remove</Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              <Button type="button" onClick={addMaintenanceRow} className="mt-2"><Plus className="h-4 w-4 mr-2" />Add Row</Button>
+            </div>
+            <div>
+              <label className="block mb-1">Photo (optional)</label>
+              <Input name="photo" type="file" accept="image/*" onChange={handleFormChange} />
+            </div>
+            {error && <div className="text-red-600">{error}</div>}
+            <div className="flex gap-2 justify-end">
+              <Button type="submit" disabled={loading}>{loading ? "Saving..." : "Save Trip"}</Button>
+              <DialogClose asChild>
+                <Button type="button" variant="outline">Cancel</Button>
+              </DialogClose>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
       <Card className="shadow-card">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span className="flex items-center">
               <MapPin className="h-5 w-5 mr-2 text-primary" />
-              All Trips ({filteredTrips.length})
+              All Trips ({trips.length})
             </span>
             <div className="relative w-64">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -117,7 +144,12 @@ export const TripsManagement = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {filteredTrips.map((trip, index) => (
+            {trips.filter(trip =>
+              trip.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              trip.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              trip.origin.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              trip.destination.toLowerCase().includes(searchTerm.toLowerCase())
+            ).map((trip, index) => (
               <Card 
                 key={trip.id} 
                 className="shadow-card hover:shadow-elegant transition-all duration-300 animate-fade-in"
@@ -134,11 +166,10 @@ export const TripsManagement = () => {
                         <p className="text-sm text-muted-foreground">{trip.customer}</p>
                       </div>
                     </div>
-                    <Badge variant={getStatusColor(trip.status) as any}>
+                    <Badge variant={trip.status === 'Completed' ? 'default' : 'secondary'}>
                       {trip.status}
                     </Badge>
                   </div>
-
                   <div className="grid md:grid-cols-2 gap-4 mb-4">
                     <div className="space-y-2">
                       <div className="flex items-center text-sm">
@@ -174,7 +205,6 @@ export const TripsManagement = () => {
                       </div>
                     </div>
                   </div>
-
                   <div className="flex space-x-2">
                     <Button variant="outline" size="sm">
                       View Details
@@ -202,3 +232,57 @@ export const TripsManagement = () => {
     </div>
   );
 };
+
+
+// import React, { useState } from "react";
+// import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+// import { Button } from "@/components/ui/button";
+// import { Badge } from "@/components/ui/badge";
+// import { Input } from "@/components/ui/input";
+// import { Textarea } from "@/components/ui/textarea";
+// import { Table, TableHeader, TableBody, TableRow, TableCell } from "@/components/ui/table";
+// import { Plus, Search, MapPin, Calendar, User, Truck } from "lucide-react";
+// import { Dialog, DialogTrigger, DialogContent, DialogClose } from "@/components/ui/dialog";
+
+// export const TripsManagement = () => {
+//   const [searchTerm, setSearchTerm] = useState("");
+//   const [open, setOpen] = useState(false);
+//   const [form, setForm] = useState({
+//     customer_id: "",
+//     origin: "",
+//     destination: "",
+//     driver_id: "",
+//     truck_id: "",
+//     scheduled_date: "",
+//     distance: "",
+//     cost: "",
+//     rate_usd: "",
+//     driver_pay: "",
+//     mileage: "",
+//     road_tolls: "",
+//     comments: "",
+//     photo: null,
+//   });
+//   const [maintenanceRows, setMaintenanceRows] = useState([{ item: "", cost: "" }]);
+//   const [loading, setLoading] = useState(false);
+//   const [error, setError] = useState("");
+
+//   const trips = [
+//     { id: "TRP-001", customer: "ABC Corporation", origin: "New York, NY", destination: "Los Angeles, CA", driver: "John Smith", truck: "ABC-123", scheduledDate: "2024-02-25", status: "Completed", distance: "2,800 miles" },
+//     { id: "TRP-002", customer: "XYZ Ltd", origin: "Chicago, IL", destination: "Houston, TX", driver: "Sarah Lee", truck: "XYZ-456", scheduledDate: "2024-03-01", status: "Scheduled", distance: "1,080 miles" }
+//   ];
+
+//   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+//     const { name, value, files } = e.target as HTMLInputElement;
+//     if (name === "photo" && files) {
+//       setForm((prev) => ({ ...prev, photo: files[0] }));
+//     } else {
+//       setForm((prev) => ({ ...prev, [name]: value }));
+//     }
+//   };
+
+//   const handleMaintenanceChange = (idx: number, field: string, value: string) => {
+//     setMaintenanceRows((rows) => rows.map((row, i) => i === idx ? { ...row, [field]: value } : row));
+//   };
+//   const addMaintenanceRow = () => setMaintenanceRows((rows) => [...rows, { item: "", cost: "" }]);
+//   const removeMaintenanceRow = (idx: number) => setMaintenanceRows((rows) => rows.filter((_, i) => i !== idx));}
