@@ -8,17 +8,30 @@ import {
   Menu,
   Building2,
   LogOut,
-  Settings
+  Settings,
+  User
 } from "lucide-react";
 import { useState } from "react";
+
+interface Profile {
+  id: string;
+  user_id: string;
+  name: string;
+  phone?: string;
+  role: 'admin' | 'dispatcher' | 'driver';
+  is_verified: boolean;
+  created_at: string;
+  updated_at: string;
+}
 
 interface NavigationProps {
   currentPage: string;
   onPageChange: (page: string) => void;
   onLogout?: () => void;
+  userProfile?: Profile | null;
 }
 
-export const Navigation = ({ currentPage, onPageChange, onLogout }: NavigationProps) => {
+export const Navigation = ({ currentPage, onPageChange, onLogout, userProfile }: NavigationProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navigationItems = [
@@ -59,7 +72,20 @@ export const Navigation = ({ currentPage, onPageChange, onLogout }: NavigationPr
           </div>
 
           {/* Desktop Actions */}
-          <div className="hidden md:flex md:items-center md:space-x-2">
+          <div className="hidden md:flex md:items-center md:space-x-4">
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 rounded-full bg-gradient-primary flex items-center justify-center">
+                <User className="h-4 w-4 text-primary-foreground" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-sm font-medium text-foreground">
+                  {userProfile?.name || 'Loading...'}
+                </span>
+                <span className="text-xs text-muted-foreground capitalize">
+                  {userProfile?.role || ''}
+                </span>
+              </div>
+            </div>
             <Button variant="ghost" size="sm">
               <Settings className="h-4 w-4" />
             </Button>

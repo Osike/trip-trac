@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Navigation } from "@/components/ui/navigation";
 import { DashboardOverview } from "@/components/dashboard/DashboardOverview";
 import { UsersManagement } from "@/components/users/UsersManagement";
@@ -8,24 +9,41 @@ import { TripsManagement } from "@/components/trips/TripsManagement";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Truck, ArrowRight, Shield, Clock, BarChart3 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 import heroImage from "@/assets/logistics-hero.jpg";
 
 const Index = () => {
-  const [currentPage, setCurrentPage] = useState("landing");
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentPage, setCurrentPage] = useState("dashboard");
+  const { user, profile, loading, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate("/auth");
+    }
+  }, [user, loading, navigate]);
 
   const handleLogin = () => {
-    setIsAuthenticated(true);
-    setCurrentPage("dashboard");
+    navigate("/auth");
   };
 
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    setCurrentPage("landing");
+  const handleLogout = async () => {
+    await signOut();
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <Truck className="h-12 w-12 text-primary mx-auto mb-4 animate-pulse" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   const renderPage = () => {
-    if (!isAuthenticated) {
+    if (!user) {
       return (
         <div className="min-h-screen bg-background">
           {/* Hero Section */}
@@ -171,11 +189,12 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {isAuthenticated && (
+      {user && (
         <Navigation 
           currentPage={currentPage} 
           onPageChange={setCurrentPage}
           onLogout={handleLogout}
+          userProfile={profile}
         />
       )}
       {renderPage()}

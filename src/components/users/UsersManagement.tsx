@@ -3,41 +3,74 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Plus, Search, Users, Shield, Car } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+
+interface Profile {
+  id: string;
+  user_id: string;
+  name: string;
+  phone?: string;
+  role: 'admin' | 'dispatcher' | 'driver';
+  is_verified: boolean;
+  created_at: string;
+  updated_at: string;
+}
 
 export const UsersManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [users, setUsers] = useState<Profile[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const users = [
-    { id: 1, name: "John Smith", email: "john@example.com", role: "Driver", status: "Active", phone: "+1-234-567-8901" },
-    { id: 2, name: "Sarah Johnson", email: "sarah@example.com", role: "Admin", status: "Active", phone: "+1-234-567-8902" },
-    { id: 3, name: "Mike Davis", email: "mike@example.com", role: "Driver", status: "Active", phone: "+1-234-567-8903" },
-    { id: 4, name: "Lisa Wilson", email: "lisa@example.com", role: "Dispatcher", status: "Inactive", phone: "+1-234-567-8904" },
-    { id: 5, name: "Tom Brown", email: "tom@example.com", role: "Driver", status: "Active", phone: "+1-234-567-8905" }
-  ];
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const fetchUsers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        toast.error('Failed to fetch users');
+        console.error('Error:', error);
+        return;
+      }
+
+      setUsers(data || []);
+    } catch (error) {
+      toast.error('An unexpected error occurred');
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getRoleIcon = (role: string) => {
-    switch (role) {
-      case 'Admin': return Shield;
-      case 'Dispatcher': return Users;
-      case 'Driver': return Car;
+    switch (role.toLowerCase()) {
+      case 'admin': return Shield;
+      case 'dispatcher': return Users;
+      case 'driver': return Car;
       default: return Users;
     }
   };
 
   const getRoleBadgeVariant = (role: string) => {
-    switch (role) {
-      case 'Admin': return 'destructive';
-      case 'Dispatcher': return 'default';
-      case 'Driver': return 'secondary';
+    switch (role.toLowerCase()) {
+      case 'admin': return 'destructive';
+      case 'dispatcher': return 'default';
+      case 'driver': return 'secondary';
       default: return 'secondary';
     }
   };
 
   const filteredUsers = users.filter(user =>
     user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.role.toLowerCase().includes(searchTerm.toLowerCase())
+    user.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (user.phone && user.phone.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   return (
@@ -72,45 +105,61 @@ export const UsersManagement = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {filteredUsers.map((user, index) => {
-              const RoleIcon = getRoleIcon(user.role);
-              return (
-                <div 
-                  key={user.id} 
-                  className="flex items-center justify-between p-4 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors animate-fade-in"
-                  style={{ animationDelay: `${index * 50}ms` }}
-                >
-                  <div className="flex items-center space-x-4">
-                    <div className="w-10 h-10 rounded-full bg-gradient-primary flex items-center justify-center">
-                      <RoleIcon className="h-5 w-5 text-primary-foreground" />
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-foreground">{user.name}</h3>
-                      <p className="text-sm text-muted-foreground">{user.email}</p>
-                      <p className="text-xs text-muted-foreground">{user.phone}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-4">
-                    <Badge variant={getRoleBadgeVariant(user.role) as any}>
-                      {user.role}
-                    </Badge>
-                    <Badge variant={user.status === 'Active' ? 'default' : 'secondary'}>
-                      {user.status}
-                    </Badge>
-                    <div className="flex space-x-2">
-                      <Button variant="outline" size="sm">
-                        Edit
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        {user.status === 'Active' ? 'Deactivate' : 'Activate'}
-                      </Button>
-                    </div>
-                  </div>
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-center">
+                <Users className="h-12 w-12 text-primary mx-auto mb-4 animate-pulse" />
+                <p className="text-muted-foreground">Loading users...</p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredUsers.length === 0 ? (
+                <div className="text-center py-8">
+                  <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No users found</p>
                 </div>
-              );
-            })}
-          </div>
+              ) : (
+                filteredUsers.map((user, index) => {
+                  const RoleIcon = getRoleIcon(user.role);
+                  return (
+                    <div 
+                      key={user.id} 
+                      className="flex items-center justify-between p-4 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-colors animate-fade-in"
+                      style={{ animationDelay: `${index * 50}ms` }}
+                    >
+                      <div className="flex items-center space-x-4">
+                        <div className="w-10 h-10 rounded-full bg-gradient-primary flex items-center justify-center">
+                          <RoleIcon className="h-5 w-5 text-primary-foreground" />
+                        </div>
+                        <div>
+                          <h3 className="font-medium text-foreground">{user.name}</h3>
+                          <p className="text-sm text-muted-foreground">User ID: {user.user_id}</p>
+                          <p className="text-xs text-muted-foreground">{user.phone || 'No phone'}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-4">
+                        <Badge variant={getRoleBadgeVariant(user.role) as any} className="capitalize">
+                          {user.role}
+                        </Badge>
+                        <Badge variant={user.is_verified ? 'default' : 'secondary'}>
+                          {user.is_verified ? 'Verified' : 'Unverified'}
+                        </Badge>
+                        <div className="flex space-x-2">
+                          <Button variant="outline" size="sm">
+                            Edit
+                          </Button>
+                          <Button variant="outline" size="sm">
+                            {user.is_verified ? 'Suspend' : 'Verify'}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
