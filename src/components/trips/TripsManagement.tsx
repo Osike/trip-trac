@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableHeader, TableBody, TableRow, TableCell } from "@/components/ui/table";
 import { Plus, Search, MapPin, Calendar, User, Truck } from "lucide-react";
-import { Dialog, DialogTrigger, DialogContent, DialogClose } from "@/components/ui/dialog";
+import { Dialog, DialogTrigger, DialogContent, DialogClose, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 export const TripsManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -67,8 +67,13 @@ export const TripsManagement = () => {
           </DialogTrigger>
         </div>
         <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Schedule New Trip</DialogTitle>
+            <DialogDescription>
+              Fill in the details below to schedule a new trip for your logistics operation.
+            </DialogDescription>
+          </DialogHeader>
           <form className="space-y-4">
-            <h2 className="text-lg font-bold">Schedule New Trip</h2>
             <Input name="customer_id" placeholder="Customer ID" value={form.customer_id} onChange={handleFormChange} required />
             <Input name="origin" placeholder="Origin" value={form.origin} onChange={handleFormChange} required />
             <Input name="destination" placeholder="Destination" value={form.destination} onChange={handleFormChange} required />
