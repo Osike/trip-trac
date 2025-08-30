@@ -1,7 +1,9 @@
 import { StatsCard } from "@/components/ui/stats-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, Truck, MapPin, Building2, TrendingUp, Plus } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Users, Truck, MapPin, Building2, TrendingUp, ChevronDown, FileText } from "lucide-react";
+import { toast } from "sonner";
 
 export const DashboardOverview = () => {
   const stats = [
@@ -51,6 +53,11 @@ export const DashboardOverview = () => {
     }
   };
 
+  const handleReportGeneration = (reportType: string) => {
+    toast.success(`Generating ${reportType} report...`);
+    // Here you would implement the actual report generation logic
+  };
+
   return (
     <div className="space-y-6 p-6">
       <div className="flex items-center justify-between">
@@ -58,10 +65,38 @@ export const DashboardOverview = () => {
           <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
           <p className="text-muted-foreground">Welcome to your logistics command center</p>
         </div>
-        <Button className="bg-gradient-primary hover:bg-gradient-primary/90 shadow-glow">
-          <Plus className="h-4 w-4 mr-2" />
-          Quick Actions
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button className="bg-gradient-primary hover:bg-gradient-primary/90 shadow-glow">
+              <FileText className="h-4 w-4 mr-2" />
+              Quick Actions
+              <ChevronDown className="h-4 w-4 ml-2" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56 bg-background border border-border shadow-lg z-50">
+            <DropdownMenuItem 
+              onClick={() => handleReportGeneration('Trips')}
+              className="cursor-pointer hover:bg-accent hover:text-accent-foreground"
+            >
+              <MapPin className="h-4 w-4 mr-2" />
+              Generate Trips Report
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={() => handleReportGeneration('Trucks')}
+              className="cursor-pointer hover:bg-accent hover:text-accent-foreground"
+            >
+              <Truck className="h-4 w-4 mr-2" />
+              Generate Trucks Report
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={() => handleReportGeneration('Customers')}
+              className="cursor-pointer hover:bg-accent hover:text-accent-foreground"
+            >
+              <Building2 className="h-4 w-4 mr-2" />
+              Generate Customers Report
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Stats Grid */}
