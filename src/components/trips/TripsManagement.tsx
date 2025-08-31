@@ -66,67 +66,83 @@ export const TripsManagement = () => {
             </Button>
           </DialogTrigger>
         </div>
-        <DialogContent>
-          <DialogHeader>
+        <DialogContent className="max-w-[95vw] sm:max-w-[500px] h-[90vh] max-h-[90vh] sm:h-auto sm:max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Schedule New Trip</DialogTitle>
             <DialogDescription>
               Fill in the details below to schedule a new trip for your logistics operation.
             </DialogDescription>
           </DialogHeader>
-          <form className="space-y-4">
-            <Input name="customer_id" placeholder="Customer ID" value={form.customer_id} onChange={handleFormChange} required />
-            <Input name="origin" placeholder="Origin" value={form.origin} onChange={handleFormChange} required />
-            <Input name="destination" placeholder="Destination" value={form.destination} onChange={handleFormChange} required />
-            <Input name="driver_id" placeholder="Driver ID" value={form.driver_id} onChange={handleFormChange} required />
-            <Input name="truck_id" placeholder="Truck ID" value={form.truck_id} onChange={handleFormChange} required />
-            <Input name="scheduled_date" type="date" value={form.scheduled_date} onChange={handleFormChange} required />
-            <Input name="distance" placeholder="Distance (miles)" value={form.distance} onChange={handleFormChange} required />
-            <Input name="cost" placeholder="Trip Cost" value={form.cost} onChange={handleFormChange} required />
-            <Input name="rate_usd" placeholder="Rate (USD)" value={form.rate_usd} onChange={handleFormChange} required />
-            <Input name="driver_pay" placeholder="Driver's Pay" value={form.driver_pay} onChange={handleFormChange} required />
-            <Input name="mileage" placeholder="Mileage" value={form.mileage} onChange={handleFormChange} required />
-            <Input name="road_tolls" placeholder="Road Tolls" value={form.road_tolls} onChange={handleFormChange} required />
-            <Textarea name="comments" placeholder="Comments (optional)" value={form.comments} onChange={handleFormChange} />
-            <div>
-              <label className="block mb-1">Maintenance (table)</label>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableCell>Item</TableCell>
-                    <TableCell>Cost</TableCell>
-                    <TableCell></TableCell>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {maintenanceRows.map((row, idx) => (
-                    <TableRow key={idx}>
-                      <TableCell>
-                        <Input value={row.item} onChange={e => handleMaintenanceChange(idx, "item", e.target.value)} placeholder="Maintenance Item" />
-                      </TableCell>
-                      <TableCell>
-                        <Input value={row.cost} onChange={e => handleMaintenanceChange(idx, "cost", e.target.value)} placeholder="Cost" />
-                      </TableCell>
-                      <TableCell>
-                        <Button type="button" variant="destructive" onClick={() => removeMaintenanceRow(idx)}>Remove</Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              <Button type="button" onClick={addMaintenanceRow} className="mt-2"><Plus className="h-4 w-4 mr-2" />Add Row</Button>
-            </div>
-            <div>
-              <label className="block mb-1">Photo (optional)</label>
-              <Input name="photo" type="file" accept="image/*" onChange={handleFormChange} />
-            </div>
-            {error && <div className="text-red-600">{error}</div>}
-            <div className="flex gap-2 justify-end">
-              <Button type="submit" disabled={loading}>{loading ? "Saving..." : "Save Trip"}</Button>
-              <DialogClose asChild>
-                <Button type="button" variant="outline">Cancel</Button>
-              </DialogClose>
-            </div>
-          </form>
+          <div className="overflow-y-auto flex-grow pr-1 -mr-1 pb-4">
+            <form className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Input name="customer_id" placeholder="Customer ID" value={form.customer_id} onChange={handleFormChange} required />
+                <Input name="scheduled_date" type="date" value={form.scheduled_date} onChange={handleFormChange} required />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Input name="origin" placeholder="Origin" value={form.origin} onChange={handleFormChange} required />
+                <Input name="destination" placeholder="Destination" value={form.destination} onChange={handleFormChange} required />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Input name="driver_id" placeholder="Driver ID" value={form.driver_id} onChange={handleFormChange} required />
+                <Input name="truck_id" placeholder="Truck ID" value={form.truck_id} onChange={handleFormChange} required />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Input name="distance" placeholder="Distance (miles)" value={form.distance} onChange={handleFormChange} required />
+                <Input name="mileage" placeholder="Mileage" value={form.mileage} onChange={handleFormChange} required />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Input name="cost" placeholder="Trip Cost" value={form.cost} onChange={handleFormChange} required />
+                <Input name="rate_usd" placeholder="Rate (USD)" value={form.rate_usd} onChange={handleFormChange} required />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Input name="driver_pay" placeholder="Driver's Pay" value={form.driver_pay} onChange={handleFormChange} required />
+                <Input name="road_tolls" placeholder="Road Tolls" value={form.road_tolls} onChange={handleFormChange} required />
+              </div>
+              <Textarea name="comments" placeholder="Comments (optional)" value={form.comments} onChange={handleFormChange} />
+              <div>
+                <label className="block mb-1">Maintenance Items</label>
+                <div className="max-h-[200px] overflow-y-auto border rounded-md p-2">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableCell>Item</TableCell>
+                        <TableCell>Cost</TableCell>
+                        <TableCell></TableCell>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {maintenanceRows.map((row, idx) => (
+                        <TableRow key={idx}>
+                          <TableCell>
+                            <Input value={row.item} onChange={e => handleMaintenanceChange(idx, "item", e.target.value)} placeholder="Maintenance Item" />
+                          </TableCell>
+                          <TableCell>
+                            <Input value={row.cost} onChange={e => handleMaintenanceChange(idx, "cost", e.target.value)} placeholder="Cost" />
+                          </TableCell>
+                          <TableCell>
+                            <Button type="button" variant="destructive" size="sm" onClick={() => removeMaintenanceRow(idx)}>Remove</Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                  <Button type="button" onClick={addMaintenanceRow} className="mt-2" size="sm"><Plus className="h-4 w-4 mr-2" />Add Row</Button>
+                </div>
+              </div>
+              <div>
+                <label className="block mb-1">Photo (optional)</label>
+                <Input name="photo" type="file" accept="image/*" onChange={handleFormChange} />
+              </div>
+              {error && <div className="text-red-600">{error}</div>}
+              <div className="flex gap-2 justify-end sticky bottom-0 pt-2 bg-background">
+                <Button type="submit" disabled={loading}>{loading ? "Saving..." : "Save Trip"}</Button>
+                <DialogClose asChild>
+                  <Button type="button" variant="outline">Cancel</Button>
+                </DialogClose>
+              </div>
+            </form>
+          </div>
         </DialogContent>
       </Dialog>
       <Card className="shadow-card">
