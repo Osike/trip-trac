@@ -2,10 +2,38 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, Truck, User, Weight, Settings } from "lucide-react";
-import { useState } from "react";
+import { Plus, Search, Truck, User, Weight, Settings, Loader2 } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
 import { Dialog, DialogTrigger, DialogContent, DialogClose, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+
+interface TruckFromDB {
+  id: string;
+  plate_number: string;
+  model: string;
+  capacity: number | null;
+  status: "active" | "inactive" | "maintenance";
+  assigned_driver_id: string | null;
+  mileage: number | null;
+  last_maintenance: string | null;
+  created_at: string;
+  updated_at: string;
+  profiles?: {
+    name: string;
+  } | null;
+}
+
+interface DisplayTruck {
+  id: string;
+  plateNumber: string;
+  model: string;
+  capacity: string;
+  status: string;
+  assignedDriver: string | null;
+  mileage: string;
+  lastMaintenance: string;
+}
 export const TrucksManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [open, setOpen] = useState(false);
@@ -20,29 +48,108 @@ export const TrucksManagement = () => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [trucks, setTrucks] = useState<DisplayTruck[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
 
-  const trucks = [
-    { id: 1, plateNumber: "ABC-123", model: "Volvo FH16", capacity: "40 tons", status: "Active", assignedDriver: "John Smith", mileage: "245,000 km", lastMaintenance: "2024-01-15" },
-    { id: 2, plateNumber: "XYZ-456", model: "Mercedes Actros", capacity: "35 tons", status: "Maintenance", assignedDriver: "Sarah Johnson", mileage: "180,500 km", lastMaintenance: "2024-02-20" },
-    { id: 3, plateNumber: "DEF-789", model: "Scania R450", capacity: "42 tons", status: "Active", assignedDriver: "Mike Davis", mileage: "320,200 km", lastMaintenance: "2024-01-30" },
-    { id: 4, plateNumber: "GHI-012", model: "DAF XF", capacity: "38 tons", status: "Available", assignedDriver: null, mileage: "95,800 km", lastMaintenance: "2024-02-10" },
-    { id: 5, plateNumber: "JKL-345", model: "MAN TGX", capacity: "45 tons", status: "Active", assignedDriver: "Lisa Wilson", mileage: "210,400 km", lastMaintenance: "2024-02-01" }
-  ];
+  // Fetch trucks from database on component mount
+  useEffect(() => {
+    fetchTrucks();
+  }, []);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Active': return 'default';
-      case 'Maintenance': return 'destructive';
-      case 'Available': return 'secondary';
-      default: return 'secondary';
+  // Debounce search
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchTerm) {
+        searchTrucks(searchTerm);
+      } else {
+        fetchTrucks();
+      }
+    }, 500);
+    
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm]);
+
+  // Fetch all trucks
+  const fetchTrucks = async () => {
+    setIsSearching(true);
+    try {
+      const { data, error } = await supabase
+        .from('trucks')
+        .select('*, profiles(name)')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        toast.error('Failed to fetch trucks');
+        console.error('Error:', error);
+        return;
+      }
+
+      // Transform data for display
+      const formattedTrucks = (data as TruckFromDB[]).map(truck => ({
+        id: truck.id,
+        plateNumber: truck.plate_number,
+        model: truck.model,
+        capacity: `${truck.capacity || 0} tons`,
+        status: truck.status.charAt(0).toUpperCase() + truck.status.slice(1),
+        assignedDriver: truck.profiles?.name || null,
+        mileage: `${truck.mileage || 0} km`,
+        lastMaintenance: truck.last_maintenance || 'Not recorded'
+      }));
+
+      setTrucks(formattedTrucks);
+    } catch (error) {
+      toast.error('An unexpected error occurred');
+      console.error('Error:', error);
+    } finally {
+      setIsSearching(false);
     }
   };
 
-  const filteredTrucks = trucks.filter(truck =>
-    truck.plateNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    truck.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (truck.assignedDriver && truck.assignedDriver.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  // Search trucks
+  const searchTrucks = async (term: string) => {
+    setIsSearching(true);
+    try {
+      const { data, error } = await supabase
+        .from('trucks')
+        .select('*, profiles(name)')
+        .or(`plate_number.ilike.%${term}%,model.ilike.%${term}%`)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        toast.error('Search failed');
+        console.error('Error:', error);
+        return;
+      }
+
+      // Transform data for display
+      const formattedTrucks = (data as TruckFromDB[]).map(truck => ({
+        id: truck.id,
+        plateNumber: truck.plate_number,
+        model: truck.model,
+        capacity: `${truck.capacity || 0} tons`,
+        status: truck.status.charAt(0).toUpperCase() + truck.status.slice(1),
+        assignedDriver: truck.profiles?.name || null,
+        mileage: `${truck.mileage || 0} km`,
+        lastMaintenance: truck.last_maintenance || 'Not recorded'
+      }));
+
+      setTrucks(formattedTrucks);
+    } catch (error) {
+      toast.error('An unexpected error occurred');
+      console.error('Error:', error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'active': return 'default';
+      case 'maintenance': return 'destructive';
+      case 'available': case 'inactive': return 'secondary';
+      default: return 'secondary';
+    }
+  };
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -64,22 +171,43 @@ export const TrucksManagement = () => {
         capacity?: number | null;
         status?: "active" | "inactive" | "maintenance";
         assigned_driver_id?: string | null;
+        mileage?: number | null;
+        last_maintenance?: string | null;
       } = {
         plate_number: form.plate_number,
         model: form.model,
         capacity: form.capacity ? Number(form.capacity) : null,
         status: statusValue,
         assigned_driver_id: form.assigned_driver_id || null,
+        mileage: form.mileage ? Number(form.mileage) : null,
+        last_maintenance: form.last_maintenance || null
       };
+      
       const { error: truckError } = await supabase.from("trucks").insert(payload);
+      
     if (truckError) {
       setError(truckError.message);
       setLoading(false);
       return;
     }
+    
+    toast.success('Truck added successfully');
     setLoading(false);
     setOpen(false);
-    // Optionally, refresh trucks list here
+    
+    // Reset form
+    setForm({
+      plate_number: "",
+      model: "",
+      capacity: "",
+      status: "active",
+      assigned_driver_id: "",
+      mileage: "",
+      last_maintenance: "",
+    });
+    
+    // Refresh trucks list
+    fetchTrucks();
   };
 
   return (
@@ -137,7 +265,7 @@ export const TrucksManagement = () => {
             <CardTitle className="flex items-center justify-between">
               <span className="flex items-center">
                 <Truck className="h-5 w-5 mr-2 text-primary" />
-                Fleet Overview ({filteredTrucks.length})
+                Fleet Overview ({trucks.length})
               </span>
               <div className="relative w-64">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -151,8 +279,21 @@ export const TrucksManagement = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {filteredTrucks.map((truck, index) => (
+            {isSearching ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-center">
+                  <Loader2 className="h-12 w-12 text-primary mx-auto mb-4 animate-spin" />
+                  <p className="text-muted-foreground">Searching trucks...</p>
+                </div>
+              </div>
+            ) : trucks.length === 0 ? (
+              <div className="text-center py-8">
+                <Truck className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">No trucks found</p>
+              </div>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {trucks.map((truck, index) => (
                 <Card 
                   key={truck.id} 
                   className="shadow-card hover:shadow-elegant transition-all duration-300 animate-fade-in"
@@ -208,6 +349,7 @@ export const TrucksManagement = () => {
                 </Card>
               ))}
             </div>
+            )}
           </CardContent>
         </Card>
     </div>
