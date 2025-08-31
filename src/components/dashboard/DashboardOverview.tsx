@@ -54,38 +54,50 @@ export const DashboardOverview = () => {
   };
 
   const handleReportGeneration = async (reportType: string) => {
-    if (reportType === 'Trips') {
-      try {
-        toast.loading('Generating trips report...');
-        
-        const { supabase } = await import('@/integrations/supabase/client');
-        const { data, error } = await supabase.functions.invoke('generate-trips-report');
-        
-        if (error) {
-          console.error('Error generating report:', error);
-          toast.error('Failed to generate report');
+    try {
+      toast.loading(`Generating ${reportType.toLowerCase()} report...`);
+      
+      const { supabase } = await import('@/integrations/supabase/client');
+      
+      let functionName = '';
+      switch (reportType) {
+        case 'Trips':
+          functionName = 'generate-trips-report';
+          break;
+        case 'Trucks':
+          functionName = 'generate-trucks-report';
+          break;
+        case 'Customers':
+          functionName = 'generate-customers-report';
+          break;
+        default:
+          toast.error('Invalid report type selected');
           return;
-        }
-
-        // Create blob and download
-        const blob = new Blob([data], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `trips-report-${new Date().toISOString().split('T')[0]}.csv`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-        
-        toast.success('Trips report generated successfully!');
-      } catch (error) {
-        console.error('Error:', error);
-        toast.error('Failed to generate report');
       }
-    } else {
-      toast.success(`Generating ${reportType} report...`);
-      // Here you would implement the actual report generation logic for other types
+
+      const { data, error } = await supabase.functions.invoke(functionName);
+      
+      if (error) {
+        console.error('Error generating report:', error);
+        toast.error('Failed to generate report');
+        return;
+      }
+
+      // Create blob and download
+      const blob = new Blob([data], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${reportType.toLowerCase()}-report-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      toast.success(`${reportType} report generated successfully!`);
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Failed to generate report');
     }
   };
 
