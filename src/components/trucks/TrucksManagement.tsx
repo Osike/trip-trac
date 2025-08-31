@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Plus, Search, Truck, User, Weight, Settings } from "lucide-react";
 import { useState } from "react";
-import { Dialog, DialogTrigger, DialogContent, DialogClose } from "@/components/ui/dialog";
+import { Dialog, DialogTrigger, DialogContent, DialogClose, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 export const TrucksManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -84,38 +84,55 @@ export const TrucksManagement = () => {
 
   return (
     <div className="space-y-6 p-6">
-      <Dialog open={open} onOpenChange={setOpen}>
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Fleet Management</h1>
-            <p className="text-muted-foreground">Monitor and manage your truck fleet</p>
-          </div>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Fleet Management</h1>
+          <p className="text-muted-foreground">Monitor and manage your truck fleet</p>
+        </div>
+        <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button className="bg-gradient-primary hover:bg-gradient-primary/90 shadow-glow">
               <Plus className="h-4 w-4 mr-2" />
+              Add Truck
             </Button>
           </DialogTrigger>
-        </div>
-        <DialogContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <h2 className="text-lg font-bold">Add New Truck</h2>
-            <Input name="plate_number" placeholder="Plate Number" value={form.plate_number} onChange={handleFormChange} required />
-            <Input name="model" placeholder="Model" value={form.model} onChange={handleFormChange} required />
-            <Input name="capacity" placeholder="Capacity (tons)" value={form.capacity} onChange={handleFormChange} required />
-            <Input name="status" placeholder="Status (active/inactive/maintenance)" value={form.status} onChange={handleFormChange} required />
-            <Input name="assigned_driver_id" placeholder="Assigned Driver ID (optional)" value={form.assigned_driver_id} onChange={handleFormChange} />
-            <Input name="mileage" placeholder="Mileage (km)" value={form.mileage} onChange={handleFormChange} required />
-            <Input name="last_maintenance" type="date" value={form.last_maintenance} onChange={handleFormChange} required />
-            {error && <div className="text-red-600">{error}</div>}
-            <div className="flex gap-2 justify-end">
-              <Button type="submit" disabled={loading}>{loading ? "Saving..." : "Save Truck"}</Button>
-              <DialogClose asChild>
-                <Button type="button" variant="outline">Cancel</Button>
-              </DialogClose>
+          <DialogContent className="max-w-[95vw] sm:max-w-[500px] h-[90vh] max-h-[90vh] sm:h-auto sm:max-h-[85vh] overflow-hidden flex flex-col">
+            <DialogHeader className="flex-shrink-0">
+              <DialogTitle>Add New Truck</DialogTitle>
+              <DialogDescription>
+                Enter truck details to add it to your fleet.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="overflow-y-auto flex-grow pr-1 -mr-1 pb-4">
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Input name="plate_number" placeholder="Plate Number" value={form.plate_number} onChange={handleFormChange} required />
+                  <Input name="model" placeholder="Model" value={form.model} onChange={handleFormChange} required />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Input name="capacity" placeholder="Capacity (tons)" value={form.capacity} onChange={handleFormChange} required />
+                  <Input name="mileage" placeholder="Mileage (km)" value={form.mileage} onChange={handleFormChange} required />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Input name="status" placeholder="Status (active/inactive/maintenance)" value={form.status} onChange={handleFormChange} required />
+                  <Input name="last_maintenance" type="date" value={form.last_maintenance} onChange={handleFormChange} required />
+                </div>
+                <Input name="assigned_driver_id" placeholder="Assigned Driver ID (optional)" value={form.assigned_driver_id} onChange={handleFormChange} />
+                
+                {error && <div className="text-red-600">{error}</div>}
+                <div className="flex gap-2 justify-end sticky bottom-0 pt-2 bg-background">
+                  <Button type="submit" disabled={loading}>{loading ? "Saving..." : "Save Truck"}</Button>
+                  <DialogClose asChild>
+                    <Button type="button" variant="outline">Cancel</Button>
+                  </DialogClose>
+                </div>
+              </form>
             </div>
-          </form>
-        </DialogContent>
-        <Card className="shadow-card">
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <Card className="shadow-card">
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span className="flex items-center">
@@ -193,7 +210,6 @@ export const TrucksManagement = () => {
             </div>
           </CardContent>
         </Card>
-      </Dialog>
     </div>
   );
 }
