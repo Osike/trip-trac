@@ -13,18 +13,17 @@ serve(async (req) => {
   }
 
   try {
+    const { dateRange, filters, format = 'json' } = await req.json();
+    
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
-        },
-      }
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     )
 
-    // Fetch trips data with related customer and truck information
-    const { data: trips, error } = await supabaseClient
+    console.log('Fetching trips data with filters:', { dateRange, filters });
+
+    // Build query
+    let query = supabaseClient
       .from('trips')
       .select(`
         id,
@@ -36,10 +35,27 @@ serve(async (req) => {
         distance,
         duration,
         created_at,
-        customers!inner(name, contact_person),
-        trucks!inner(plate_number, model)
+        updated_at,
+        customers!inner(name, contact_person, email),
+        trucks!inner(plate_number, model),
+        profiles!trips_driver_id_fkey(name)
       `)
-      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: false });
+
+    // Apply date range filter
+    if (dateRange?.from) {
+      query = query.gte('scheduled_date', dateRange.from);
+    }
+    if (dateRange?.to) {
+      query = query.lte('scheduled_date', dateRange.to);
+    }
+
+    // Apply additional filters
+    if (filters?.status && filters.status !== '') {
+      query = query.eq('status', filters.status);
+    }
+
+    const { data: trips, error } = await query;
 
     if (error) {
       console.error('Error fetching trips:', error)
@@ -52,27 +68,52 @@ serve(async (req) => {
       )
     }
 
-    // Generate CSV content (simpler than PDF for now, can be enhanced later)
-    const csvHeader = 'Trip ID,Customer,Origin,Destination,Status,Scheduled Date,Cost,Distance,Duration,Truck\n'
-    const csvRows = trips.map(trip => {
-      const scheduledDate = new Date(trip.scheduled_date).toLocaleDateString()
+    console.log(`Fetched ${trips?.length || 0} trips`);
+
+    // Transform data for display
+    const transformedTrips = trips?.map(trip => ({
+      id: trip.id,
+      customer: trip.customers?.name || 'N/A',
+      origin: trip.origin,
+      destination: trip.destination,
+      status: trip.status,
+      scheduled_date: new Date(trip.scheduled_date).toLocaleDateString(),
+      cost: trip.cost ? `$${trip.cost}` : 'N/A',
+      distance: trip.distance ? `${trip.distance} km` : 'N/A',
+      duration: trip.duration ? `${trip.duration} hrs` : 'N/A',
+      truck: trip.trucks ? `${trip.trucks.plate_number} (${trip.trucks.model})` : 'N/A',
+      driver: trip.profiles?.name || 'Unassigned',
+      created_at: new Date(trip.created_at).toLocaleDateString()
+    })) || [];
+
+    // Return JSON data for UI display
+    if (format === 'json') {
+      return new Response(JSON.stringify(transformedTrips), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Generate CSV for download
+    const csvHeader = 'Trip ID,Customer,Origin,Destination,Status,Scheduled Date,Cost,Distance,Duration,Truck,Driver,Created Date\n'
+    const csvRows = transformedTrips.map(trip => {
       return [
         trip.id,
-        trip.customers.name,
+        trip.customer,
         trip.origin,
         trip.destination,
         trip.status,
-        scheduledDate,
-        trip.cost || 'N/A',
-        trip.distance || 'N/A',
-        trip.duration || 'N/A',
-        `${trip.trucks.plate_number} (${trip.trucks.model})`
-      ].join(',')
+        trip.scheduled_date,
+        trip.cost,
+        trip.distance,
+        trip.duration,
+        trip.truck,
+        trip.driver,
+        trip.created_at
+      ].map(field => `"${field}"`).join(',')
     }).join('\n')
 
     const csvContent = csvHeader + csvRows
 
-    // For now, return CSV. In production, you'd want to use a PDF library
     return new Response(csvContent, {
       headers: {
         ...corsHeaders,

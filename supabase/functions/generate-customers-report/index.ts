@@ -12,6 +12,7 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const { dateRange, filters, format = 'json' } = await req.json();
     console.log('Starting customers report generation...');
 
     // Initialize Supabase client
@@ -19,14 +20,24 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Fetch customers data with trip count
-    const { data: customers, error } = await supabase
+    // Build query
+    let query = supabase
       .from('customers')
       .select(`
         *,
         trips(count)
       `)
       .order('created_at', { ascending: false });
+
+    // Apply date range filter
+    if (dateRange?.from) {
+      query = query.gte('created_at', dateRange.from);
+    }
+    if (dateRange?.to) {
+      query = query.lte('created_at', dateRange.to);
+    }
+
+    const { data: customers, error } = await query;
 
     if (error) {
       console.error('Error fetching customers:', error);
@@ -35,7 +46,26 @@ Deno.serve(async (req) => {
 
     console.log(`Fetched ${customers?.length || 0} customers`);
 
-    // Generate CSV content
+    // Transform data for display
+    const transformedCustomers = customers?.map(customer => ({
+      id: customer.id,
+      name: customer.name,
+      contact_person: customer.contact_person || 'N/A',
+      email: customer.email || 'N/A',
+      phone: customer.phone || 'N/A',
+      address: customer.address || 'N/A',
+      total_trips: customer.trips?.[0]?.count || 0,
+      created_at: new Date(customer.created_at).toLocaleDateString()
+    })) || [];
+
+    // Return JSON data for UI display
+    if (format === 'json') {
+      return new Response(JSON.stringify(transformedCustomers), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Generate CSV content for download
     const csvHeaders = [
       'Customer Name',
       'Contact Person',
@@ -46,15 +76,15 @@ Deno.serve(async (req) => {
       'Created Date'
     ];
 
-    const csvRows = customers?.map(customer => [
+    const csvRows = transformedCustomers.map(customer => [
       customer.name,
-      customer.contact_person || 'N/A',
-      customer.email || 'N/A',
-      customer.phone || 'N/A',
-      customer.address || 'N/A',
-      customer.trips?.[0]?.count || 0,
-      new Date(customer.created_at).toLocaleDateString()
-    ]) || [];
+      customer.contact_person,
+      customer.email,
+      customer.phone,
+      customer.address,
+      customer.total_trips,
+      customer.created_at
+    ]);
 
     const csvContent = [
       csvHeaders.join(','),

@@ -61,11 +61,12 @@ export const ReportsTemplate: React.FC<ReportsTemplateProps> = ({
       const fromDate = dateRange.from ? dateRange.from.toISOString() : undefined;
       const toDate = dateRange.to ? dateRange.to.toISOString() : undefined;
 
-      // Call the appropriate Supabase Edge Function based on reportType
+      // Call the appropriate Supabase Edge Function to get JSON data for display
       const { data, error } = await supabase.functions.invoke(`generate-${reportType}-report`, {
         body: {
           dateRange: { from: fromDate, to: toDate },
-          filters
+          filters,
+          format: 'json'
         }
       });
 
@@ -75,24 +76,69 @@ export const ReportsTemplate: React.FC<ReportsTemplateProps> = ({
         return;
       }
 
-      // For demonstration/debugging purposes, generate sample data if no data is returned
-      if (!data || data.length === 0) {
-        // Generate sample data based on report type
-        const sampleData = generateSampleData(reportType, columns);
-        setReportData(sampleData);
-        toast.success(`${title} report generated with sample data (for demonstration)`);
-      } else {
+      if (data && data.length > 0) {
         setReportData(data);
-        toast.success(`${title} report generated successfully`);
+        toast.success(`${title} report generated successfully with ${data.length} records`);
+      } else {
+        setReportData([]);
+        toast.info('No data found for the selected criteria');
       }
     } catch (error) {
-      // For demonstration/debugging purposes, generate sample data on error
-      const sampleData = generateSampleData(reportType, columns);
-      setReportData(sampleData);
-      toast.warning('Using sample data (Edge functions may not be deployed yet)');
+      toast.error('Failed to generate report');
       console.error('Error:', error);
+      setReportData([]);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Download report as CSV
+  const downloadReport = async () => {
+    setIsExporting(true);
+    try {
+      // Format date range for query
+      const fromDate = dateRange.from ? dateRange.from.toISOString() : undefined;
+      const toDate = dateRange.to ? dateRange.to.toISOString() : undefined;
+
+      // Call the edge function to get CSV
+      const { data: sessionData } = await supabase.auth.getSession();
+      const response = await fetch(
+        `https://xkhsakqmyphneyyartiz.supabase.co/functions/v1/generate-${reportType}-report`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${sessionData.session?.access_token || ''}`
+          },
+          body: JSON.stringify({
+            dateRange: { from: fromDate, to: toDate },
+            filters,
+            format: 'csv'
+          })
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to download report');
+      }
+
+      // Create download link
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${reportType}-report-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast.success(`${title} report downloaded successfully`);
+    } catch (error) {
+      toast.error('Failed to download report');
+      console.error('Error:', error);
+    } finally {
+      setIsExporting(false);
     }
   };
 
