@@ -7,8 +7,13 @@
     "dev": "vite",
     "build": "vite build",
     "build:dev": "vite build --mode development",
+    "build:prod": "vite build --mode production",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "serve": "vite preview --port 3000",
+    "clean": "rimraf dist",
+    "generate-icons": "node scripts/generate-icons.js",
+    "prebuild": "npm run generate-icons"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -44,8 +49,10 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
+    "compression": "^1.8.1",
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.6.0",
+    "express": "^5.1.0",
     "input-otp": "^1.4.2",
     "jspdf": "^3.0.2",
     "jspdf-autotable": "^5.0.2",
@@ -78,6 +85,7 @@
     "globals": "^15.15.0",
     "lovable-tagger": "^1.1.9",
     "postcss": "^8.5.6",
+    "rimraf": "^6.0.1",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.38.0",

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="512" height="512" rx="100" fill="#3B82F6"/>
+  
+  <!-- Road -->
+  <rect x="100" y="350" width="312" height="60" rx="5" fill="#1E293B"/>
+  <rect x="130" y="380" width="40" height="10" rx="2" fill="#F8FAFC"/>
+  <rect x="190" y="380" width="40" height="10" rx="2" fill="#F8FAFC"/>
+  <rect x="250" y="380" width="40" height="10" rx="2" fill="#F8FAFC"/>
+  <rect x="310" y="380" width="40" height="10" rx="2" fill="#F8FAFC"/>
+  <rect x="370" y="380" width="40" height="10" rx="2" fill="#F8FAFC"/>
+  
+  <!-- Truck Body -->
+  <rect x="180" y="180" width="240" height="130" rx="10" fill="#EF4444"/>
+  <rect x="120" y="240" width="90" height="70" rx="10" fill="#EF4444"/>
+  
+  <!-- Truck Cabin -->
+  <rect x="100" y="240" width="80" height="70" rx="10" fill="#FB923C"/>
+  <rect x="120" y="255" width="40" height="30" rx="5" fill="#BFDBFE"/>
+  
+  <!-- Wheels -->
+  <circle cx="150" cy="340" r="30" fill="#1E293B"/>
+  <circle cx="150" cy="340" r="15" fill="#94A3B8"/>
+  <circle cx="280" cy="340" r="30" fill="#1E293B"/>
+  <circle cx="280" cy="340" r="15" fill="#94A3B8"/>
+  <circle cx="360" cy="340" r="30" fill="#1E293B"/>
+  <circle cx="360" cy="340" r="15" fill="#94A3B8"/>
+  
+  <!-- Text -->
+  <path d="M220 225 H380 Q385 225 385 230 V260 Q385 265 380 265 H220 Q215 265 215 260 V230 Q215 225 220 225 Z" fill="#FFFFFF"/>
+  <text x="300" y="250" font-family="Arial, sans-serif" font-size="24" font-weight="bold" text-anchor="middle" fill="#3B82F6">TRIP-TRAC</text>
+</svg>
