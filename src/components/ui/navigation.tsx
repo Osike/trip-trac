@@ -9,7 +9,8 @@ import {
   Building2,
   LogOut,
   Settings,
-  User
+  User,
+  FileText
 } from "lucide-react";
 import { useState } from "react";
 
@@ -40,6 +41,7 @@ export const Navigation = ({ currentPage, onPageChange, onLogout, userProfile }:
     { id: 'customers', label: 'Customers', icon: Building2 },
     { id: 'trucks', label: 'Trucks', icon: Truck },
     { id: 'trips', label: 'Trips', icon: MapPin },
+    { id: 'reports', label: 'Reports', icon: FileText },
   ];
 
   return (
