@@ -50,7 +50,7 @@ export const ReportsTemplate: React.FC<ReportsTemplateProps> = ({
 
   // Handle filter change
   const handleFilterChange = (key: string, value: string) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
+    setFilters(prev => ({ ...prev, [key]: value === 'all' ? '' : value }));
   };
 
   // Generate report
@@ -549,7 +549,7 @@ export const ReportsTemplate: React.FC<ReportsTemplateProps> = ({
                         <SelectValue placeholder={`Select ${filter.label}`} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All</SelectItem>
+                        <SelectItem value="all">All</SelectItem>
                         {filter.options.map((option) => (
                           <SelectItem key={option.value} value={option.value}>
                             {option.label}
