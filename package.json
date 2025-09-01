@@ -11,9 +11,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "serve": "vite preview --port 3000",
-    "clean": "rimraf dist",
-    "generate-icons": "node scripts/generate-icons.js",
-    "prebuild": "npm run generate-icons"
+    "clean": "rimraf dist"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -86,6 +84,7 @@
     "lovable-tagger": "^1.1.9",
     "postcss": "^8.5.6",
     "rimraf": "^6.0.1",
+    "sharp": "^0.33.2",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.38.0",
