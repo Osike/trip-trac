@@ -501,7 +501,7 @@ export const ReportsTemplate: React.FC<ReportsTemplateProps> = ({
   };
 
   // Filter report data based on search term
-  const filteredData = reportData.filter(item => 
+  const filteredData = (reportData || []).filter(item => 
     Object.values(item).some(value => 
       String(value).toLowerCase().includes(searchTerm.toLowerCase())
     )
