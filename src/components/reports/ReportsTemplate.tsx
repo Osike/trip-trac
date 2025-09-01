@@ -21,6 +21,7 @@ interface ReportsTemplateProps {
     key: string; 
     options: { label: string; value: string }[] 
   }[];
+  customTruckLog?: boolean;
 }
 
 export const ReportsTemplate: React.FC<ReportsTemplateProps> = ({
@@ -28,7 +29,8 @@ export const ReportsTemplate: React.FC<ReportsTemplateProps> = ({
   description,
   reportType,
   columns,
-  filterOptions = []
+  filterOptions = [],
+  customTruckLog = false
 }) => {
   // State
   const [isLoading, setIsLoading] = useState(false);
@@ -194,7 +196,7 @@ export const ReportsTemplate: React.FC<ReportsTemplateProps> = ({
     try {
       // Create a new PDF document
       const doc = new jsPDF({
-        orientation: 'landscape',
+        orientation: customTruckLog ? 'portrait' : 'landscape',
         unit: 'mm',
         format: 'a4'
       });
@@ -206,78 +208,266 @@ export const ReportsTemplate: React.FC<ReportsTemplateProps> = ({
         author: 'Champions Ltd',
         creator: 'Trip-Trac System',
       });
-      
-      // Add company logo (using the truck image from public folder)
-      // You'll need to replace this with your actual logo
-      const imgData = "data:image/png;base64,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";
-      doc.addImage(imgData, 'PNG', 10, 10, 15, 15);
-      
-      // Add company name in the header center
-      doc.setFontSize(18);
-      doc.setTextColor(0, 51, 102); // Navy blue color
-      doc.text('CHAMPIONS LTD', doc.internal.pageSize.width / 2, 15, { align: 'center' });
-      
-      // Add report title
-      doc.setFontSize(14);
-      doc.setTextColor(0, 0, 0);
-      doc.text(`${title}`, doc.internal.pageSize.width / 2, 25, { align: 'center' });
-      
-      // Add date range
-      let dateRangeText = 'Date range: ';
-      if (dateRange.from && dateRange.to) {
-        dateRangeText += `${dateRange.from.toLocaleDateString()} to ${dateRange.to.toLocaleDateString()}`;
-      } else if (dateRange.from) {
-        dateRangeText += `From ${dateRange.from.toLocaleDateString()}`;
-      } else if (dateRange.to) {
-        dateRangeText += `Until ${dateRange.to.toLocaleDateString()}`;
+
+      if (customTruckLog) {
+        // Create a truck log format similar to the provided image
+        // Add "TRUCK LOG" header
+        doc.setFontSize(24);
+        doc.setTextColor(231, 76, 60); // Red color similar to image
+        doc.text('TRUCK LOG', 15, 20);
+        
+        // Add truck icon or logo
+        const imgData = "data:image/png;base64,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";
+        doc.addImage(imgData, 'PNG', 160, 10, 30, 20);
+        
+        // Add main header grid
+        doc.setFillColor(240, 240, 240);
+        doc.rect(10, 25, 190, 10, 'F');
+        doc.setDrawColor(0, 0, 0);
+        doc.rect(10, 25, 190, 10, 'S');
+        doc.setFontSize(10);
+        doc.setTextColor(0, 0, 0);
+        
+        // Header grid titles
+        doc.text('Driver Name', 12, 32);
+        doc.text('Company', 105, 32);
+        doc.text('Week', 170, 32);
+        
+        // Header grid values
+        doc.rect(10, 35, 190, 10, 'S');
+        
+        // Truck info section
+        doc.setFillColor(240, 240, 240);
+        doc.rect(10, 45, 190, 10, 'F');
+        doc.rect(10, 45, 190, 10, 'S');
+        doc.text('Truck Number', 12, 52);
+        doc.text('Starting Odometer Reading', 70, 52);
+        doc.text('Ending Odometer Reading', 140, 52);
+        
+        // Truck info values
+        doc.rect(10, 55, 190, 10, 'S');
+        
+        // Trip Record Header
+        doc.setFillColor(240, 240, 240);
+        doc.rect(10, 70, 190, 10, 'F');
+        doc.rect(10, 70, 190, 10, 'S');
+        doc.setFontSize(12);
+        doc.text('Trip Record', 100, 77, { align: 'center' });
+        
+        // Trip Record columns
+        doc.setFontSize(9);
+        doc.setFillColor(240, 240, 240);
+        doc.rect(10, 80, 190, 10, 'F');
+        doc.rect(10, 80, 190, 10, 'S');
+        
+        // Draw vertical lines for the trip record header
+        doc.line(30, 80, 30, 90); // After Date
+        doc.line(60, 80, 60, 90); // After Trailer
+        doc.line(90, 80, 90, 90); // After Origin
+        doc.line(130, 80, 130, 90); // After Destination
+        doc.line(160, 80, 160, 90); // After Miles
+        
+        // Trip record column headers
+        doc.text('Date', 12, 87);
+        doc.text('Trailer', 32, 87);
+        doc.text('Origin City', 62, 87);
+        doc.text('Destination City', 92, 87);
+        doc.text('Miles', 132, 87);
+        doc.text('Rate', 162, 87);
+        
+        // Trip record rows - 10 empty rows
+        for (let i = 0; i < 10; i++) {
+          doc.rect(10, 90 + (i * 10), 190, 10, 'S');
+          doc.line(30, 90 + (i * 10), 30, 100 + (i * 10)); // After Date
+          doc.line(60, 90 + (i * 10), 60, 100 + (i * 10)); // After Trailer
+          doc.line(90, 90 + (i * 10), 90, 100 + (i * 10)); // After Origin
+          doc.line(130, 90 + (i * 10), 130, 100 + (i * 10)); // After Destination
+          doc.line(160, 90 + (i * 10), 160, 100 + (i * 10)); // After Miles
+        }
+        
+        // Totals row
+        doc.setFillColor(240, 240, 240);
+        doc.rect(10, 190, 190, 10, 'F');
+        doc.rect(10, 190, 190, 10, 'S');
+        doc.line(130, 190, 130, 200); // After "Totals"
+        doc.line(160, 190, 160, 200); // After Miles
+        doc.setFontSize(10);
+        doc.text('Totals (Trips, Miles & Revenue)', 12, 197);
+        
+        // Fuel Purchase Record Header
+        doc.setFillColor(240, 240, 240);
+        doc.rect(10, 205, 190, 10, 'F');
+        doc.rect(10, 205, 190, 10, 'S');
+        doc.setFontSize(12);
+        doc.text('Fuel Purchase Record', 100, 212, { align: 'center' });
+        
+        // Fuel Purchase columns
+        doc.setFontSize(9);
+        doc.setFillColor(240, 240, 240);
+        doc.rect(10, 215, 190, 10, 'F');
+        doc.rect(10, 215, 190, 10, 'S');
+        
+        // Draw vertical lines for the fuel purchase header
+        doc.line(30, 215, 30, 225); // After Date
+        doc.line(60, 215, 60, 225); // After Odometer
+        doc.line(90, 215, 90, 225); // After Miles Driven
+        doc.line(110, 215, 110, 225); // After Gallons
+        doc.line(130, 215, 130, 225); // After MPG
+        doc.line(150, 215, 150, 225); // After Price
+        doc.line(170, 215, 170, 225); // After Cost
+        
+        // Fuel purchase column headers
+        doc.text('Date', 12, 222);
+        doc.text('Odometer', 32, 222);
+        doc.text('Miles Driven', 62, 222);
+        doc.text('Gallons', 92, 222);
+        doc.text('MPG', 112, 222);
+        doc.text('Price', 132, 222);
+        doc.text('Cost', 152, 222);
+        doc.text('Notes', 172, 222);
+        
+        // Fuel purchase rows - 4 empty rows
+        for (let i = 0; i < 4; i++) {
+          doc.rect(10, 225 + (i * 10), 190, 10, 'S');
+          doc.line(30, 225 + (i * 10), 30, 235 + (i * 10)); 
+          doc.line(60, 225 + (i * 10), 60, 235 + (i * 10)); 
+          doc.line(90, 225 + (i * 10), 90, 235 + (i * 10)); 
+          doc.line(110, 225 + (i * 10), 110, 235 + (i * 10)); 
+          doc.line(130, 225 + (i * 10), 130, 235 + (i * 10)); 
+          doc.line(150, 225 + (i * 10), 150, 235 + (i * 10)); 
+          doc.line(170, 225 + (i * 10), 170, 235 + (i * 10)); 
+        }
+        
+        // Average row
+        doc.setFillColor(240, 240, 240);
+        doc.rect(10, 265, 190, 10, 'F');
+        doc.rect(10, 265, 190, 10, 'S');
+        doc.line(90, 265, 90, 275); 
+        doc.setFontSize(10);
+        doc.text('Average Price Per Gallon', 12, 272);
+        doc.text('Average Cost Per Mile Driven', 92, 272);
+        
+        // Add a second page for maintenance records
+        doc.addPage();
+        
+        // Maintenance Record Header
+        doc.setFillColor(240, 240, 240);
+        doc.rect(10, 10, 190, 10, 'F');
+        doc.rect(10, 10, 190, 10, 'S');
+        doc.setFontSize(12);
+        doc.text('Maintenance Record', 100, 17, { align: 'center' });
+        
+        // Maintenance columns
+        doc.setFontSize(9);
+        doc.setFillColor(240, 240, 240);
+        doc.rect(10, 20, 190, 10, 'F');
+        doc.rect(10, 20, 190, 10, 'S');
+        
+        // Draw vertical lines for the maintenance header
+        doc.line(30, 20, 30, 30); // After Date
+        doc.line(80, 20, 80, 30); // After Repair Facility
+        doc.line(160, 20, 160, 30); // After Repair Description
+        doc.line(180, 20, 180, 30); // After Price
+        
+        // Maintenance column headers
+        doc.text('Date', 12, 27);
+        doc.text('Repair Facility', 32, 27);
+        doc.text('Repair Description', 82, 27);
+        doc.text('Price', 162, 27);
+        doc.text('Cost', 182, 27);
+        
+        // Maintenance rows - 5 empty rows
+        for (let i = 0; i < 5; i++) {
+          doc.rect(10, 30 + (i * 10), 190, 10, 'S');
+          doc.line(30, 30 + (i * 10), 30, 40 + (i * 10)); 
+          doc.line(80, 30 + (i * 10), 80, 40 + (i * 10)); 
+          doc.line(160, 30 + (i * 10), 160, 40 + (i * 10)); 
+          doc.line(180, 30 + (i * 10), 180, 40 + (i * 10)); 
+        }
+        
+        // Comments section
+        doc.setFillColor(240, 240, 240);
+        doc.rect(10, 90, 190, 10, 'F');
+        doc.rect(10, 90, 190, 10, 'S');
+        doc.setFontSize(12);
+        doc.text('Comments / Notes', 100, 97, { align: 'center' });
+        
+        // Comments box
+        doc.rect(10, 100, 190, 60, 'S');
+        
       } else {
-        dateRangeText += 'All dates';
-      }
-      doc.setFontSize(10);
-      doc.text(dateRangeText, doc.internal.pageSize.width / 2, 32, { align: 'center' });
-      
-      // Add filters applied
-      if (Object.keys(filters).length > 0) {
-        let filterText = 'Filters: ';
-        filterOptions.forEach(filter => {
-          if (filters[filter.key]) {
-            const option = filter.options.find(opt => opt.value === filters[filter.key]);
-            if (option) {
-              filterText += `${filter.label}: ${option.label}, `;
+        // Standard report format (original code)
+        // Add company logo (using the truck image from public folder)
+        const imgData = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAACXBIWXMAAAsTAAALEwEAmpwYAAAGqklEQVR4nO1ba2wUVRT+zt3ZUqptBVpDARUQLYJPiEQFBTWoiQYTH1ETjRoTDQbUKPGHmqAJPzQYNaKJr0QTNcYHPuMvfKCJShB8JApKBBHlZaFKW7rbnd37+WNm2tl2drvT7U7bjZ5kszN37j33fOfc87r3DFBGGWWUMYxhDBUj1Ot5z/gOQDWAPWZ+ZchkGmIYUglQr+edAPi3vwH8GsDl4jAzgP4+fxqZB+DLIZBtyGDIJADOXV0D4NjwN6XT8SzHGZnkGHIJgDP5wwCcO5zNFmQeNlKQGKnGM7s37JnVnk5lrLbm+tpKIhxZmKd6XbGZL/3Ht6b7Ott9Tds3P3vNHYuyAHZvQQhE9ZVrFr+ycCRKQWAwJ1Ov560I/35UX9+SzmTM38YpyuWVFRVmY13dmHQms2vx+vWZMIvCPF1jRgyq1/Mu7Buw6P8GGKnX815Ur+e9o15vXPkYXAmoX7T6bADHAdh09qIrT4Z4yNzx0N72OAhGnbNt9ZDJVAhFdYHzl204g4huJKI6AA1FZL9s7vxLqluaV9/81sOXAlhr09zf18+rITIWXnPzU4VkLNUY5UhAVBQiIrWzpXlTLpv9OpfLPQIgXcwAiJgZCLRMKZvVL1qjFNGdMJhK0QWKiQxFxOp/baKSM5Xt6epgZn4KQK7U8xkGy+FYdZ3Q0tHyG0t2/lBNxoTiApFzk5kBUcpEtHlkiT80KJkELLzjuTEQmQJAZRLI9nT3iPIaAFxd1/jZB2ff+ezEv75bt3fnD+v57HlPJRRRUwA0AIgC3Z6eJcx2ZHAyiWRwLpfrc+U3TVV9KvJ71HWZxLDQQb9lknIKlx+ZSDu6sRTqAaEYjgHgy0+1dRuPOPSIZCbbf+EXn32ytLuj46Vn33rkeV9kJYA6m+buvpZGUkS/AsAd9Y0vL73+scVFZC7VMKVIQEe/n3v5nXdfmzXtuCUMTmfzubNmTj35l66unrfNzC5DMOGf9osuaH5z1W3vHjnvgvkiPA/AZJvG7r5WFCuifoVz+6oN16LbNEXXKIWAFIoBitevfXtBTXX1lcnqmmZAjVVEbR3t7Zu2/vnLNaZlNQG4FMBnNk0d3S0ABGOqJuKlaz4vJmupBiklBzAg1xLRZZVV1Wv7+3r/fHvjy++19/R8BKAdgA5gN4C/7c8aAPMAHGbT1dHdghPnXnrLlk0vPxS2Iz9fMZCfnT+AXq/nfcLMmT/VMhRRpvDm9zpQI9UU3vPRU3dNnnb80sqqmuOraqouJ0U7AMCvInoZRE3u2m5OA2gHcACAtQAWCUyJtmF3XwsEIu6ZWchPUfkL0RdJq5S0FeYVWfH6/1tSSk7pAfCs63uDECAQwkbF/eIz94/+PjsXeQCAqjAP/L6CYLvGr2Dl5T8KhVLyyAuDKKCInMmXSVgA/O4OqxoT8I80lGIM0J1CJ/98wfMAMAVGIgI/jzvvOQDyB0qllP0AO1c3IfAJnMlH05qQFLAT7rH33PbwzwMgJ3+kQOkvK4vd+Vj5E5CEmfwtXNb58M8DoBRbfmwk/aVIQI89sWA/IJj8iZ8tQQ4Q1QOXPfJzpvPnGRCRHKJPKSjFFgiMPpQJ0Hw/IPDzXHpCv8+dPj+iR4b+YugKJXWBsABCMGk2zfmT1504T35I8nj+cwrQj+CXOWXGgHBwTrwf+P2ALnuLJKILRXQbAPEldz2mKKVIAIcFsGlB8YOXHRVAxJjCeUEOALIz+eQWLgZDQMQ+A+Q2QRyTF2EvmgNYiOwxw/QCuQdAgjDvSMHgSkC4/CUST0Bsgz8QFkVcYEDlp1HS5xFoQ/HtUQ4D/L1BZYvtTN7N+9EiKR+xA6MdxX10u2YYpN2eYPjnBUJWSDu0RLaIgjJABRLgjgHuEJ9IA+YBYVIiDRGdIKJMsxdiDQhSIz4IK2ZaJVvAigF5FGwVAQV+3lDhvYEf/3M5QJ4EOETGL0QPAGLnAHa6vHMnNwfIc3VdxwckQB5tEpQnBaGrG0DxnEDYGOkScHAJEBSxQdyJQ3NlW8ARG/AcOZHp6wMRxTiQVxiN+EwwOARGjcDiOvUjdgqMeAkAcHAF5PYBPyFy21FesY2Ynb0GRMaAkKbLOcbIzQUGrACK5ACXgQDPj3+ZkZYUDZ6LcKJRVRl2cUzZKK+MoUE5CJZRRhlllDHs8C82X6Z2Ui3YLQAAAABJRU5ErkJggg==";
+        doc.addImage(imgData, 'PNG', 10, 10, 15, 15);
+        
+        // Add company name in the header center
+        doc.setFontSize(18);
+        doc.setTextColor(0, 51, 102); // Navy blue color
+        doc.text('CHAMPIONS LTD', doc.internal.pageSize.width / 2, 15, { align: 'center' });
+        
+        // Add report title
+        doc.setFontSize(14);
+        doc.setTextColor(0, 0, 0);
+        doc.text(`${title}`, doc.internal.pageSize.width / 2, 25, { align: 'center' });
+        
+        // Add date range
+        let dateRangeText = 'Date range: ';
+        if (dateRange.from && dateRange.to) {
+          dateRangeText += `${dateRange.from.toLocaleDateString()} to ${dateRange.to.toLocaleDateString()}`;
+        } else if (dateRange.from) {
+          dateRangeText += `From ${dateRange.from.toLocaleDateString()}`;
+        } else if (dateRange.to) {
+          dateRangeText += `Until ${dateRange.to.toLocaleDateString()}`;
+        } else {
+          dateRangeText += 'All dates';
+        }
+        doc.setFontSize(10);
+        doc.text(dateRangeText, doc.internal.pageSize.width / 2, 32, { align: 'center' });
+        
+        // Add filters applied
+        if (Object.keys(filters).length > 0) {
+          let filterText = 'Filters: ';
+          filterOptions.forEach(filter => {
+            if (filters[filter.key]) {
+              const option = filter.options.find(opt => opt.value === filters[filter.key]);
+              if (option) {
+                filterText += `${filter.label}: ${option.label}, `;
+              }
             }
+          });
+          filterText = filterText.slice(0, -2); // Remove trailing comma and space
+          doc.text(filterText, doc.internal.pageSize.width / 2, 37, { align: 'center' });
+        }
+        
+        // Create table headers
+        const headers = columns.map(col => col.label);
+        
+        // Create table rows
+        const rows = reportData.map(row => 
+          columns.map(col => row[col.key] !== undefined ? String(row[col.key]) : '—')
+        );
+        
+        // Add table
+        autoTable(doc, {
+          startY: 45,
+          head: [headers],
+          body: rows,
+          theme: 'grid',
+          headStyles: {
+            fillColor: [0, 51, 102], // Navy blue
+            textColor: [255, 255, 255],
+            fontStyle: 'bold'
+          },
+          alternateRowStyles: {
+            fillColor: [240, 240, 240]
+          },
+          styles: {
+            fontSize: 9,
+            cellPadding: 3
           }
         });
-        filterText = filterText.slice(0, -2); // Remove trailing comma and space
-        doc.text(filterText, doc.internal.pageSize.width / 2, 37, { align: 'center' });
       }
-      
-      // Create table headers
-      const headers = columns.map(col => col.label);
-      
-      // Create table rows
-      const rows = reportData.map(row => 
-        columns.map(col => row[col.key] !== undefined ? String(row[col.key]) : '—')
-      );
-      
-      // Add table
-      autoTable(doc, {
-        startY: 45,
-        head: [headers],
-        body: rows,
-        theme: 'grid',
-        headStyles: {
-          fillColor: [0, 51, 102], // Navy blue
-          textColor: [255, 255, 255],
-          fontStyle: 'bold'
-        },
-        alternateRowStyles: {
-          fillColor: [240, 240, 240]
-        },
-        styles: {
-          fontSize: 9,
-          cellPadding: 3
-        }
-      });
       
       // Add footer
       const pageCount = (doc as any).internal.pages.length;
