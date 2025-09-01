@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import AuthPage from "./pages/AuthPage";
 import NotFound from "./pages/NotFound";
 import Login from "@/components/Login";
+import { Analytics } from "@vercel/analytics/next"
 
 const queryClient = new QueryClient();
 
