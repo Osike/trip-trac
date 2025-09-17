@@ -10,6 +10,10 @@ import { Dialog, DialogTrigger, DialogContent, DialogClose, DialogHeader, Dialog
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { TripDetails } from "./TripDetails";
+import { TripEdit } from "./TripEdit";
+import { TripActions } from "./TripActions";
+import { TripStatistics } from "./TripStatistics";
 
 interface TripFromDB {
   id: string;
@@ -93,6 +97,11 @@ export const TripsManagement = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [trucks, setTrucks] = useState<Truck[]>([]);
   const [isLoadingOptions, setIsLoadingOptions] = useState(false);
+  
+  // Modal states
+  const [selectedTrip, setSelectedTrip] = useState<any>(null);
+  const [tripDetailsOpen, setTripDetailsOpen] = useState(false);
+  const [tripEditOpen, setTripEditOpen] = useState(false);
 
   // Fetch trips from database on component mount
   useEffect(() => {
@@ -406,8 +415,25 @@ export const TripsManagement = () => {
     }
   };
 
+  // Event handlers for trip actions
+  const handleViewDetails = (trip: any) => {
+    setSelectedTrip(trip);
+    setTripDetailsOpen(true);
+  };
+
+  const handleEdit = (trip: any) => {
+    setSelectedTrip(trip);
+    setTripEditOpen(true);
+  };
+
+  const handleTripUpdated = () => {
+    fetchTrips(); // Refresh trips list
+  };
+
   return (
     <div className="space-y-6 p-6">
+      {/* Trip Statistics */}
+      <TripStatistics />
       <Dialog open={open} onOpenChange={setOpen}>
         <div className="flex items-center justify-between">
           <div>
@@ -637,24 +663,12 @@ export const TripsManagement = () => {
                         </div>
                       </div>
                     </div>
-                    <div className="flex space-x-2">
-                      <Button variant="outline" size="sm">
-                        View Details
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        Edit
-                      </Button>
-                      {trip.status === 'Scheduled' && (
-                        <Button variant="outline" size="sm">
-                          Start Trip
-                        </Button>
-                      )}
-                      {trip.status === 'In Progress' && (
-                        <Button variant="outline" size="sm">
-                          Complete Trip
-                        </Button>
-                      )}
-                    </div>
+                    <TripActions
+                      trip={trip}
+                      onViewDetails={handleViewDetails}
+                      onEdit={handleEdit}
+                      onStatusUpdate={handleTripUpdated}
+                    />
                   </CardContent>
                 </Card>
               ))}
@@ -662,60 +676,22 @@ export const TripsManagement = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Trip Details Modal */}
+      <TripDetails
+        trip={selectedTrip}
+        open={tripDetailsOpen}
+        onOpenChange={setTripDetailsOpen}
+      />
+
+      {/* Trip Edit Modal */}
+      <TripEdit
+        trip={selectedTrip}
+        open={tripEditOpen}
+        onOpenChange={setTripEditOpen}
+        onTripUpdated={handleTripUpdated}
+      />
     </div>
   );
 };
 
-
-// import React, { useState } from "react";
-// import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-// import { Button } from "@/components/ui/button";
-// import { Badge } from "@/components/ui/badge";
-// import { Input } from "@/components/ui/input";
-// import { Textarea } from "@/components/ui/textarea";
-// import { Table, TableHeader, TableBody, TableRow, TableCell } from "@/components/ui/table";
-// import { Plus, Search, MapPin, Calendar, User, Truck } from "lucide-react";
-// import { Dialog, DialogTrigger, DialogContent, DialogClose } from "@/components/ui/dialog";
-
-// export const TripsManagement = () => {
-//   const [searchTerm, setSearchTerm] = useState("");
-//   const [open, setOpen] = useState(false);
-//   const [form, setForm] = useState({
-//     customer_id: "",
-//     origin: "",
-//     destination: "",
-//     driver_id: "",
-//     truck_id: "",
-//     scheduled_date: "",
-//     distance: "",
-//     cost: "",
-//     rate_usd: "",
-//     driver_pay: "",
-//     mileage: "",
-//     road_tolls: "",
-//     comments: "",
-//     photo: null,
-//   });
-//   const [maintenanceRows, setMaintenanceRows] = useState([{ item: "", cost: "" }]);
-//   const [loading, setLoading] = useState(false);
-//   const [error, setError] = useState("");
-
-//   const trips = [
-//     { id: "TRP-001", customer: "ABC Corporation", origin: "New York, NY", destination: "Los Angeles, CA", driver: "John Smith", truck: "ABC-123", scheduledDate: "2024-02-25", status: "Completed", distance: "2,800 miles" },
-//     { id: "TRP-002", customer: "XYZ Ltd", origin: "Chicago, IL", destination: "Houston, TX", driver: "Sarah Lee", truck: "XYZ-456", scheduledDate: "2024-03-01", status: "Scheduled", distance: "1,080 miles" }
-//   ];
-
-//   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-//     const { name, value, files } = e.target as HTMLInputElement;
-//     if (name === "photo" && files) {
-//       setForm((prev) => ({ ...prev, photo: files[0] }));
-//     } else {
-//       setForm((prev) => ({ ...prev, [name]: value }));
-//     }
-//   };
-
-//   const handleMaintenanceChange = (idx: number, field: string, value: string) => {
-//     setMaintenanceRows((rows) => rows.map((row, i) => i === idx ? { ...row, [field]: value } : row));
-//   };
-//   const addMaintenanceRow = () => setMaintenanceRows((rows) => [...rows, { item: "", cost: "" }]);
-//   const removeMaintenanceRow = (idx: number) => setMaintenanceRows((rows) => rows.filter((_, i) => i !== idx));}
