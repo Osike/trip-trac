@@ -226,7 +226,7 @@ export const TripsManagement = () => {
         truck: trip.trucks?.plate_number || 'Unassigned',
         scheduledDate: new Date(trip.scheduled_date).toLocaleDateString(),
         status: formatStatus(trip.status),
-        distance: trip.distance ? `${trip.distance} miles` : 'N/A'
+        distance: trip.distance ? `${Math.round(trip.distance * 1.60934)} km` : 'N/A'
       }));
 
       setTrips(formattedTrips);
@@ -274,7 +274,7 @@ export const TripsManagement = () => {
         truck: trip.trucks?.plate_number || 'Unassigned',
         scheduledDate: new Date(trip.scheduled_date).toLocaleDateString(),
         status: formatStatus(trip.status),
-        distance: trip.distance ? `${trip.distance} miles` : 'N/A'
+        distance: trip.distance ? `${Math.round(trip.distance * 1.60934)} km` : 'N/A'
       }));
 
       setTrips(formattedTrips);
@@ -514,7 +514,7 @@ export const TripsManagement = () => {
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Input name="distance" placeholder="Distance (miles)" value={form.distance} onChange={handleFormChange} required />
+                <Input name="distance" placeholder="Distance (kilometers)" value={form.distance} onChange={handleFormChange} required />
                 <Input name="mileage" placeholder="Mileage" value={form.mileage} onChange={handleFormChange} required />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

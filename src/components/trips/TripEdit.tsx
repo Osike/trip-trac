@@ -235,7 +235,7 @@ export const TripEdit = ({ trip, open, onOpenChange, onTripUpdated }: TripEditPr
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Distance (miles)</label>
+              <label className="block text-sm font-medium mb-1">Distance (kilometers)</label>
               <Input
                 name="distance"
                 type="number"
