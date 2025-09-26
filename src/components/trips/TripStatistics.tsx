@@ -36,7 +36,7 @@ export const TripStatistics = () => {
     try {
       const { data: trips, error } = await supabase
         .from('trips')
-        .select('status, cost, distance');
+        .select('*');
 
       if (error) {
         console.error('Error fetching trip statistics:', error);
@@ -49,7 +49,8 @@ export const TripStatistics = () => {
       const scheduledTrips = trips?.filter(trip => trip.status === 'scheduled').length || 0;
       const cancelledTrips = trips?.filter(trip => trip.status === 'cancelled').length || 0;
 
-      const totalRevenue = trips?.reduce((sum, trip) => sum + (trip.cost || 0), 0) || 0;
+      // Calculate total revenue from RATE field
+      const totalRevenue = trips?.reduce((sum, trip) => sum + ((trip as any).RATE || 0), 0) || 0;
       const totalDistance = trips?.reduce((sum, trip) => sum + (trip.distance || 0), 0) || 0;
       const avgTripCost = totalTrips > 0 ? totalRevenue / totalTrips : 0;
 
