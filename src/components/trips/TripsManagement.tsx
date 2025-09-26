@@ -78,9 +78,9 @@ export const TripsManagement = () => {
     truck_id: "",
     scheduled_date: "",
     distance: "",
-    cost: "",
-    rate_usd: "",
-    driver_pay: "",
+    duration: "",
+    rate: "",
+    fuel: "",
     mileage: "",
     road_tolls: "",
     comments: "",
@@ -350,7 +350,11 @@ export const TripsManagement = () => {
         truck_id: form.truck_id,
         scheduled_date: form.scheduled_date,
         distance: form.distance ? Number(form.distance) : null,
-        cost: form.cost ? Number(form.cost) : null,
+        duration: form.duration ? Number(form.duration) : null,
+        RATE: form.rate ? Number(form.rate) : null,
+        FUEL: form.fuel ? Number(form.fuel) : null,
+        MILEAGE: form.mileage ? Number(form.mileage) : null,
+        "ROAD TOLLS": form.road_tolls ? Number(form.road_tolls) : null,
         status: 'scheduled' as const
       };
 
@@ -394,9 +398,9 @@ export const TripsManagement = () => {
         truck_id: "",
         scheduled_date: "",
         distance: "",
-        cost: "",
-        rate_usd: "",
-        driver_pay: "",
+        duration: "",
+        rate: "",
+        fuel: "",
         mileage: "",
         road_tolls: "",
         comments: "",
@@ -515,15 +519,15 @@ export const TripsManagement = () => {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input name="distance" placeholder="Distance (kilometers)" value={form.distance} onChange={handleFormChange} required />
-                <Input name="mileage" placeholder="Mileage" value={form.mileage} onChange={handleFormChange} required />
+                <Input name="duration" placeholder="Duration (hours)" value={form.duration} onChange={handleFormChange} />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Input name="cost" placeholder="Trip Cost" value={form.cost} onChange={handleFormChange} required />
-                <Input name="rate_usd" placeholder="Rate (USD)" value={form.rate_usd} onChange={handleFormChange} required />
+                <Input name="mileage" placeholder="Mileage" value={form.mileage} onChange={handleFormChange} />
+                <Input name="rate" placeholder="Rate ($)" value={form.rate} onChange={handleFormChange} />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Input name="driver_pay" placeholder="Driver's Pay" value={form.driver_pay} onChange={handleFormChange} required />
-                <Input name="road_tolls" placeholder="Road Tolls" value={form.road_tolls} onChange={handleFormChange} required />
+                <Input name="fuel" placeholder="Fuel Cost ($)" value={form.fuel} onChange={handleFormChange} />
+                <Input name="road_tolls" placeholder="Road Tolls ($)" value={form.road_tolls} onChange={handleFormChange} />
               </div>
               <Textarea name="comments" placeholder="Comments (optional)" value={form.comments} onChange={handleFormChange} />
               <div>

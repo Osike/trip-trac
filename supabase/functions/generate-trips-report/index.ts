@@ -31,9 +31,12 @@ serve(async (req) => {
         destination,
         status,
         scheduled_date,
-        cost,
         distance,
         duration,
+        "RATE",
+        "FUEL",
+        "MILEAGE",
+        "ROAD TOLLS",
         created_at,
         updated_at,
         customers!inner(name, contact_person, email),
@@ -78,7 +81,10 @@ serve(async (req) => {
       destination: trip.destination,
       status: trip.status,
       scheduled_date: new Date(trip.scheduled_date).toLocaleDateString(),
-      cost: trip.cost ? `$${trip.cost}` : 'N/A',
+      rate: trip.RATE ? `$${trip.RATE}` : 'N/A',
+      fuel: trip.FUEL ? `$${trip.FUEL}` : 'N/A',
+      mileage: trip.MILEAGE ? `${trip.MILEAGE}` : 'N/A',
+      road_tolls: trip["ROAD TOLLS"] ? `$${trip["ROAD TOLLS"]}` : 'N/A',
       distance: trip.distance ? `${trip.distance} km` : 'N/A',
       duration: trip.duration ? `${trip.duration} hrs` : 'N/A',
       truck: trip.trucks ? `${trip.trucks.plate_number} (${trip.trucks.model})` : 'N/A',
@@ -94,7 +100,7 @@ serve(async (req) => {
     }
 
     // Generate CSV for download
-    const csvHeader = 'Trip ID,Customer,Origin,Destination,Status,Scheduled Date,Cost,Distance,Duration,Truck,Driver,Created Date\n'
+    const csvHeader = 'Trip ID,Customer,Origin,Destination,Status,Scheduled Date,Rate,Fuel Cost,Mileage,Road Tolls,Distance,Duration,Truck,Driver,Created Date\n'
     const csvRows = transformedTrips.map(trip => {
       return [
         trip.id,
@@ -103,7 +109,10 @@ serve(async (req) => {
         trip.destination,
         trip.status,
         trip.scheduled_date,
-        trip.cost,
+        trip.rate,
+        trip.fuel,
+        trip.mileage,
+        trip.road_tolls,
         trip.distance,
         trip.duration,
         trip.truck,

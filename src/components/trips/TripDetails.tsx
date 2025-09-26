@@ -101,7 +101,7 @@ export const TripDetails = ({ trip, open, onOpenChange }: TripDetailsProps) => {
           </Card>
 
           {/* Additional Details */}
-          {(trip.cost || trip.duration) && (
+          {(trip.RATE || trip.FUEL || trip.MILEAGE || trip["ROAD TOLLS"] || trip.duration) && (
             <Card>
               <CardContent className="p-6">
                 <h3 className="font-semibold mb-4 flex items-center">
@@ -109,11 +109,31 @@ export const TripDetails = ({ trip, open, onOpenChange }: TripDetailsProps) => {
                   Trip Details
                 </h3>
                 <div className="grid md:grid-cols-2 gap-4">
-                  {trip.cost && (
+                  {trip.RATE && (
                     <div className="flex items-center">
                       <DollarSign className="h-4 w-4 mr-2 text-muted-foreground" />
-                      <span className="text-muted-foreground w-16">Cost:</span>
-                      <span className="font-medium">${trip.cost}</span>
+                      <span className="text-muted-foreground w-16">Rate:</span>
+                      <span className="font-medium">${trip.RATE}</span>
+                    </div>
+                  )}
+                  {trip.FUEL && (
+                    <div className="flex items-center">
+                      <DollarSign className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <span className="text-muted-foreground w-20">Fuel Cost:</span>
+                      <span className="font-medium">${trip.FUEL}</span>
+                    </div>
+                  )}
+                  {trip.MILEAGE && (
+                    <div className="flex items-center">
+                      <span className="text-muted-foreground w-16">Mileage:</span>
+                      <span className="font-medium">{trip.MILEAGE}</span>
+                    </div>
+                  )}
+                  {trip["ROAD TOLLS"] && (
+                    <div className="flex items-center">
+                      <DollarSign className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <span className="text-muted-foreground w-20">Road Tolls:</span>
+                      <span className="font-medium">${trip["ROAD TOLLS"]}</span>
                     </div>
                   )}
                   {trip.duration && (

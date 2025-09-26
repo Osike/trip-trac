@@ -37,7 +37,10 @@ export const TripEdit = ({ trip, open, onOpenChange, onTripUpdated }: TripEditPr
     truck_id: "",
     scheduled_date: "",
     distance: "",
-    cost: "",
+    rate: "",
+    fuel: "",
+    mileage: "",
+    road_tolls: "",
     status: ""
   });
   const [loading, setLoading] = useState(false);
@@ -55,7 +58,10 @@ export const TripEdit = ({ trip, open, onOpenChange, onTripUpdated }: TripEditPr
         truck_id: trip.truck_id || "",
         scheduled_date: trip.scheduled_date ? trip.scheduled_date.split('T')[0] : "",
         distance: trip.distance ? trip.distance.toString() : "",
-        cost: trip.cost ? trip.cost.toString() : "",
+        rate: trip.RATE ? trip.RATE.toString() : "",
+        fuel: trip.FUEL ? trip.FUEL.toString() : "",
+        mileage: trip.MILEAGE ? trip.MILEAGE.toString() : "",
+        road_tolls: trip["ROAD TOLLS"] ? trip["ROAD TOLLS"].toString() : "",
         status: trip.status || "scheduled"
       });
       fetchDropdownData();
@@ -100,7 +106,10 @@ export const TripEdit = ({ trip, open, onOpenChange, onTripUpdated }: TripEditPr
         truck_id: form.truck_id,
         scheduled_date: form.scheduled_date,
         distance: form.distance ? parseFloat(form.distance) : null,
-        cost: form.cost ? parseFloat(form.cost) : null,
+        RATE: form.rate ? parseFloat(form.rate) : null,
+        FUEL: form.fuel ? parseFloat(form.fuel) : null,
+        MILEAGE: form.mileage ? parseFloat(form.mileage) : null,
+        "ROAD TOLLS": form.road_tolls ? parseFloat(form.road_tolls) : null,
         status: form.status as 'scheduled' | 'ongoing' | 'completed' | 'cancelled',
         updated_at: new Date().toISOString()
       };
@@ -233,7 +242,7 @@ export const TripEdit = ({ trip, open, onOpenChange, onTripUpdated }: TripEditPr
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">Distance (kilometers)</label>
               <Input
@@ -246,34 +255,72 @@ export const TripEdit = ({ trip, open, onOpenChange, onTripUpdated }: TripEditPr
             </div>
             
             <div>
-              <label className="block text-sm font-medium mb-1">Cost ($)</label>
+              <label className="block text-sm font-medium mb-1">Mileage</label>
               <Input
-                name="cost"
+                name="mileage"
                 type="number"
                 step="0.01"
-                value={form.cost}
+                value={form.mileage}
                 onChange={handleFormChange}
-                placeholder="Cost"
+                placeholder="Mileage"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Rate ($)</label>
+              <Input
+                name="rate"
+                type="number"
+                step="0.01"
+                value={form.rate}
+                onChange={handleFormChange}
+                placeholder="Rate"
               />
             </div>
             
             <div>
-              <label className="block text-sm font-medium mb-1">Status</label>
-              <Select
-                value={form.status}
-                onValueChange={(value) => handleSelectChange("status", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="scheduled">Scheduled</SelectItem>
-                  <SelectItem value="ongoing">Ongoing</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
-                </SelectContent>
-              </Select>
+              <label className="block text-sm font-medium mb-1">Fuel Cost ($)</label>
+              <Input
+                name="fuel"
+                type="number"
+                step="0.01"
+                value={form.fuel}
+                onChange={handleFormChange}
+                placeholder="Fuel Cost"
+              />
             </div>
+            
+            <div>
+              <label className="block text-sm font-medium mb-1">Road Tolls ($)</label>
+              <Input
+                name="road_tolls"
+                type="number"
+                step="0.01"
+                value={form.road_tolls}
+                onChange={handleFormChange}
+                placeholder="Road Tolls"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Status</label>
+            <Select
+              value={form.status}
+              onValueChange={(value) => handleSelectChange("status", value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="scheduled">Scheduled</SelectItem>
+                <SelectItem value="ongoing">Ongoing</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="flex justify-end gap-2">
