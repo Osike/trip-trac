@@ -143,15 +143,15 @@ export const TripStatistics = () => {
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="text-center">
-              <Badge variant="outline" className="mb-2">Scheduled</Badge>
+              <Badge variant="outline" className="mb-2 bg-blue-50 text-blue-700 border-blue-200">Scheduled</Badge>
               <p className="text-2xl font-bold">{stats.scheduledTrips}</p>
             </div>
             <div className="text-center">
-              <Badge variant="secondary" className="mb-2">Ongoing</Badge>
+              <Badge variant="secondary" className="mb-2 bg-yellow-50 text-yellow-700 border-yellow-200">Ongoing</Badge>
               <p className="text-2xl font-bold">{stats.ongoingTrips}</p>
             </div>
             <div className="text-center">
-              <Badge variant="default" className="mb-2">Completed</Badge>
+              <Badge variant="default" className="mb-2 bg-green-50 text-green-700 border-green-200">Completed</Badge>
               <p className="text-2xl font-bold">{stats.completedTrips}</p>
             </div>
             <div className="text-center">
