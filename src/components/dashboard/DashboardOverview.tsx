@@ -344,21 +344,28 @@ export const DashboardOverview = () => {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Active Trucks</span>
-                <span className="text-lg font-bold text-success">38</span>
+                <span className="text-lg font-bold text-success">{loading ? <Loader2 className="inline h-5 w-5 animate-spin" /> : stats.activeTrucks}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">In Maintenance</span>
-                <span className="text-lg font-bold text-warning">3</span>
+                <span className="text-lg font-bold text-warning">{loading ? <Loader2 className="inline h-5 w-5 animate-spin" /> : (stats.totalTrucks - stats.activeTrucks)}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Available</span>
-                <span className="text-lg font-bold text-primary">1</span>
+                <span className="text-sm font-medium">Total Trucks</span>
+                <span className="text-lg font-bold text-primary">{loading ? <Loader2 className="inline h-5 w-5 animate-spin" /> : stats.totalTrucks}</span>
               </div>
               <div className="pt-4">
                 <div className="w-full bg-secondary rounded-full h-2">
-                  <div className="bg-gradient-primary h-2 rounded-full" style={{ width: '90%' }}></div>
+                  <div
+                    className="bg-gradient-primary h-2 rounded-full"
+                    style={{ width: loading || stats.totalTrucks === 0 ? '0%' : `${Math.round((stats.activeTrucks / stats.totalTrucks) * 100)}%` }}
+                  ></div>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">90% fleet utilization</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {loading || stats.totalTrucks === 0
+                    ? '--'
+                    : `${Math.round((stats.activeTrucks / stats.totalTrucks) * 100)}% fleet utilization`}
+                </p>
               </div>
             </div>
           </CardContent>
