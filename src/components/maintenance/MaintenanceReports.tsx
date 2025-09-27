@@ -5,9 +5,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, FileDown, TrendingUp, TrendingDown } from "lucide-react";
+import { Loader2, FileDown, TrendingUp, TrendingDown, BarChart3, DollarSign } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { format } from "date-fns";
 
 interface TripProfitData {
@@ -22,6 +22,9 @@ interface TripProfitData {
   maintenance_cost: number;
   profit: number;
   profit_margin: number;
+  customer_name: string;
+  truck_plate: string;
+  driver_name: string;
 }
 
 interface TruckMaintenanceData {
@@ -31,6 +34,7 @@ interface TruckMaintenanceData {
   total_maintenance_cost: number;
   maintenance_count: number;
   avg_maintenance_cost: number;
+  last_maintenance_date: string;
 }
 
 export default function MaintenanceReports() {
@@ -41,8 +45,6 @@ export default function MaintenanceReports() {
   const [selectedTruck, setSelectedTruck] = useState<string>('');
   const [trucks, setTrucks] = useState<{ id: string; plate_number: string; model: string }[]>([]);
   const [activeTab, setActiveTab] = useState<'profits' | 'maintenance'>('profits');
-
-  const { toast } = useToast();
 
   useEffect(() => {
     fetchTrucks();
@@ -60,14 +62,16 @@ export default function MaintenanceReports() {
         .select('id, plate_number, model')
         .order('plate_number');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching trucks:', error);
+        toast.error('Failed to fetch trucks');
+        return;
+      }
+
       setTrucks(data || []);
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      console.error('Unexpected error:', error);
+      toast.error('Failed to fetch trucks');
     }
   };
 
@@ -93,6 +97,9 @@ export default function MaintenanceReports() {
           "FUEL",
           "MILEAGE", 
           "SALARY",
+          customers(name),
+          trucks(plate_number),
+          profiles(name),
           maintenance(cost)
         `)
         .not('"RATE"', 'is', null);
@@ -105,9 +112,17 @@ export default function MaintenanceReports() {
         query = query.lte('scheduled_date', format(dateRange.to, 'yyyy-MM-dd'));
       }
 
+      if (selectedTruck) {
+        query = query.eq('truck_id', selectedTruck);
+      }
+
       const { data, error } = await query.order('scheduled_date', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching trip profits:', error);
+        toast.error('Failed to fetch trip profit data');
+        return;
+      }
 
       const processedData: TripProfitData[] = (data || []).map((trip: any) => {
         const rate = Number(trip.RATE) || 0;
@@ -131,17 +146,17 @@ export default function MaintenanceReports() {
           salary,
           maintenance_cost: maintenanceCost,
           profit,
-          profit_margin: profitMargin
+          profit_margin: profitMargin,
+          customer_name: trip.customers?.name || 'Unknown',
+          truck_plate: trip.trucks?.plate_number || 'Unknown',
+          driver_name: trip.profiles?.name || 'Unassigned'
         };
       });
 
       setTripProfits(processedData);
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      console.error('Unexpected error:', error);
+      toast.error('Failed to fetch trip profit data');
     }
   };
 
@@ -162,7 +177,11 @@ export default function MaintenanceReports() {
 
       const { data, error } = await query.order('plate_number');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching truck maintenance data:', error);
+        toast.error('Failed to fetch truck maintenance data');
+        return;
+      }
 
       const processedData: TruckMaintenanceData[] = (data || []).map((truck: any) => {
         let maintenanceRecords = truck.maintenance || [];
@@ -180,6 +199,11 @@ export default function MaintenanceReports() {
         const totalMaintenanceCost = maintenanceRecords.reduce((sum: number, m: any) => sum + (Number(m.cost) || 0), 0);
         const maintenanceCount = maintenanceRecords.length;
         const avgMaintenanceCost = maintenanceCount > 0 ? totalMaintenanceCost / maintenanceCount : 0;
+        
+        // Get the most recent maintenance date
+        const lastMaintenanceDate = maintenanceRecords.length > 0 
+          ? maintenanceRecords.sort((a: any, b: any) => new Date(b.maintenance_date).getTime() - new Date(a.maintenance_date).getTime())[0].maintenance_date
+          : null;
 
         return {
           id: truck.id,
@@ -187,42 +211,71 @@ export default function MaintenanceReports() {
           model: truck.model,
           total_maintenance_cost: totalMaintenanceCost,
           maintenance_count: maintenanceCount,
-          avg_maintenance_cost: avgMaintenanceCost
+          avg_maintenance_cost: avgMaintenanceCost,
+          last_maintenance_date: lastMaintenanceDate || 'Never'
         };
       });
 
       setTruckMaintenance(processedData);
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      console.error('Unexpected error:', error);
+      toast.error('Failed to fetch truck maintenance data');
     }
   };
 
   const exportToCSV = (data: any[], filename: string) => {
-    if (data.length === 0) return;
+    if (data.length === 0) {
+      toast.error('No data to export');
+      return;
+    }
 
-    const headers = Object.keys(data[0]);
-    const csvContent = [
-      headers.join(','),
-      ...data.map(row => headers.map(header => row[header]).join(','))
-    ].join('\n');
+    try {
+      const headers = Object.keys(data[0]);
+      const csvContent = [
+        headers.join(','),
+        ...data.map(row => headers.map(header => {
+          const value = row[header];
+          // Handle values that might contain commas
+          if (typeof value === 'string' && value.includes(',')) {
+            return `"${value}"`;
+          }
+          return value;
+        }).join(','))
+      ].join('\n');
 
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    window.URL.revokeObjectURL(url);
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      
+      toast.success('Report exported successfully');
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Failed to export report');
+    }
   };
 
   const getProfitBadgeVariant = (profit: number) => {
     if (profit > 0) return "default";
     if (profit < 0) return "destructive";
     return "secondary";
+  };
+
+  const getTotalProfit = () => {
+    return tripProfits.reduce((sum, trip) => sum + trip.profit, 0);
+  };
+
+  const getAverageProfit = () => {
+    return tripProfits.length > 0 ? getTotalProfit() / tripProfits.length : 0;
+  };
+
+  const getTotalMaintenanceCost = () => {
+    return truckMaintenance.reduce((sum, truck) => sum + truck.total_maintenance_cost, 0);
   };
 
   return (
@@ -232,6 +285,53 @@ export default function MaintenanceReports() {
           <h1 className="text-3xl font-bold">Maintenance Reports</h1>
           <p className="text-muted-foreground">Analyze maintenance costs and trip profitability</p>
         </div>
+      </div>
+
+      {/* Summary Statistics */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Profit</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className={`text-2xl font-bold ${getTotalProfit() >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              ${getTotalProfit().toFixed(2)}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Avg Profit/Trip</CardTitle>
+            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className={`text-2xl font-bold ${getAverageProfit() >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              ${getAverageProfit().toFixed(2)}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Maintenance</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${getTotalMaintenanceCost().toFixed(2)}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Trips Analyzed</CardTitle>
+            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{tripProfits.length}</div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Filters */}
@@ -250,7 +350,7 @@ export default function MaintenanceReports() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Truck (for maintenance report)</label>
+              <label className="text-sm font-medium">Truck Filter</label>
               <Select value={selectedTruck} onValueChange={setSelectedTruck}>
                 <SelectTrigger>
                   <SelectValue placeholder="All trucks" />
@@ -287,13 +387,13 @@ export default function MaintenanceReports() {
           variant={activeTab === 'profits' ? 'default' : 'outline'}
           onClick={() => setActiveTab('profits')}
         >
-          Trip Profits
+          Trip Profits Analysis
         </Button>
         <Button 
           variant={activeTab === 'maintenance' ? 'default' : 'outline'}
           onClick={() => setActiveTab('maintenance')}
         >
-          Truck Maintenance
+          Truck Maintenance Summary
         </Button>
       </div>
 
@@ -309,7 +409,7 @@ export default function MaintenanceReports() {
                 </CardDescription>
               </div>
               <Button 
-                onClick={() => exportToCSV(tripProfits, 'trip-profits.csv')}
+                onClick={() => exportToCSV(tripProfits, `trip-profits-${format(new Date(), 'yyyy-MM-dd')}.csv`)}
                 disabled={tripProfits.length === 0}
               >
                 <FileDown className="h-4 w-4 mr-2" />
@@ -323,62 +423,70 @@ export default function MaintenanceReports() {
                 <Loader2 className="h-8 w-8 animate-spin" />
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Route</TableHead>
-                    <TableHead>Rate</TableHead>
-                    <TableHead>Fuel</TableHead>
-                    <TableHead>Mileage</TableHead>
-                    <TableHead>Salary</TableHead>
-                    <TableHead>Maintenance</TableHead>
-                    <TableHead>Profit</TableHead>
-                    <TableHead>Margin %</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {tripProfits.map((trip) => (
-                    <TableRow key={trip.id}>
-                      <TableCell>
-                        {format(new Date(trip.scheduled_date), 'MMM dd, yyyy')}
-                      </TableCell>
-                      <TableCell>
-                        <div className="font-medium">
-                          {trip.origin} → {trip.destination}
-                        </div>
-                      </TableCell>
-                      <TableCell>${trip.rate.toFixed(2)}</TableCell>
-                      <TableCell>${trip.fuel.toFixed(2)}</TableCell>
-                      <TableCell>${trip.mileage.toFixed(2)}</TableCell>
-                      <TableCell>${trip.salary.toFixed(2)}</TableCell>
-                      <TableCell>${trip.maintenance_cost.toFixed(2)}</TableCell>
-                      <TableCell>
-                        <Badge variant={getProfitBadgeVariant(trip.profit)}>
-                          {trip.profit > 0 ? (
-                            <TrendingUp className="h-3 w-3 mr-1" />
-                          ) : (
-                            <TrendingDown className="h-3 w-3 mr-1" />
-                          )}
-                          ${trip.profit.toFixed(2)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <span className={trip.profit_margin > 0 ? 'text-green-600' : 'text-red-600'}>
-                          {trip.profit_margin.toFixed(1)}%
-                        </span>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {tripProfits.length === 0 && (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={9} className="text-center text-muted-foreground">
-                        No trip data found
-                      </TableCell>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Route</TableHead>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Truck</TableHead>
+                      <TableHead>Driver</TableHead>
+                      <TableHead>Rate</TableHead>
+                      <TableHead>Fuel</TableHead>
+                      <TableHead>Mileage</TableHead>
+                      <TableHead>Salary</TableHead>
+                      <TableHead>Maintenance</TableHead>
+                      <TableHead>Profit</TableHead>
+                      <TableHead>Margin %</TableHead>
                     </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {tripProfits.map((trip) => (
+                      <TableRow key={trip.id}>
+                        <TableCell>
+                          {format(new Date(trip.scheduled_date), 'MMM dd, yyyy')}
+                        </TableCell>
+                        <TableCell>
+                          <div className="font-medium">
+                            {trip.origin} → {trip.destination}
+                          </div>
+                        </TableCell>
+                        <TableCell>{trip.customer_name}</TableCell>
+                        <TableCell>{trip.truck_plate}</TableCell>
+                        <TableCell>{trip.driver_name}</TableCell>
+                        <TableCell>${trip.rate.toFixed(2)}</TableCell>
+                        <TableCell>${trip.fuel.toFixed(2)}</TableCell>
+                        <TableCell>${trip.mileage.toFixed(2)}</TableCell>
+                        <TableCell>${trip.salary.toFixed(2)}</TableCell>
+                        <TableCell>${trip.maintenance_cost.toFixed(2)}</TableCell>
+                        <TableCell>
+                          <Badge variant={getProfitBadgeVariant(trip.profit)}>
+                            {trip.profit > 0 ? (
+                              <TrendingUp className="h-3 w-3 mr-1" />
+                            ) : (
+                              <TrendingDown className="h-3 w-3 mr-1" />
+                            )}
+                            ${trip.profit.toFixed(2)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <span className={trip.profit_margin > 0 ? 'text-green-600' : 'text-red-600'}>
+                            {trip.profit_margin.toFixed(1)}%
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {tripProfits.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={12} className="text-center text-muted-foreground py-8">
+                          No trip data found for the selected criteria
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -396,7 +504,7 @@ export default function MaintenanceReports() {
                 </CardDescription>
               </div>
               <Button 
-                onClick={() => exportToCSV(truckMaintenance, 'truck-maintenance.csv')}
+                onClick={() => exportToCSV(truckMaintenance, `truck-maintenance-${format(new Date(), 'yyyy-MM-dd')}.csv`)}
                 disabled={truckMaintenance.length === 0}
               >
                 <FileDown className="h-4 w-4 mr-2" />
@@ -410,37 +518,48 @@ export default function MaintenanceReports() {
                 <Loader2 className="h-8 w-8 animate-spin" />
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Truck</TableHead>
-                    <TableHead>Model</TableHead>
-                    <TableHead>Total Maintenance Cost</TableHead>
-                    <TableHead>Maintenance Count</TableHead>
-                    <TableHead>Average Cost</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {truckMaintenance.map((truck) => (
-                    <TableRow key={truck.id}>
-                      <TableCell className="font-medium">{truck.plate_number}</TableCell>
-                      <TableCell>{truck.model}</TableCell>
-                      <TableCell className="font-semibold">
-                        ${truck.total_maintenance_cost.toFixed(2)}
-                      </TableCell>
-                      <TableCell>{truck.maintenance_count}</TableCell>
-                      <TableCell>${truck.avg_maintenance_cost.toFixed(2)}</TableCell>
-                    </TableRow>
-                  ))}
-                  {truckMaintenance.length === 0 && (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center text-muted-foreground">
-                        No maintenance data found
-                      </TableCell>
+                      <TableHead>Truck</TableHead>
+                      <TableHead>Model</TableHead>
+                      <TableHead>Total Maintenance Cost</TableHead>
+                      <TableHead>Maintenance Count</TableHead>
+                      <TableHead>Average Cost</TableHead>
+                      <TableHead>Last Maintenance</TableHead>
                     </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {truckMaintenance.map((truck) => (
+                      <TableRow key={truck.id}>
+                        <TableCell className="font-medium">{truck.plate_number}</TableCell>
+                        <TableCell>{truck.model}</TableCell>
+                        <TableCell className="font-semibold">
+                          ${truck.total_maintenance_cost.toFixed(2)}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{truck.maintenance_count}</Badge>
+                        </TableCell>
+                        <TableCell>${truck.avg_maintenance_cost.toFixed(2)}</TableCell>
+                        <TableCell>
+                          {truck.last_maintenance_date !== 'Never' 
+                            ? format(new Date(truck.last_maintenance_date), 'MMM dd, yyyy')
+                            : 'Never'
+                          }
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {truckMaintenance.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                          No maintenance data found for the selected criteria
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             )}
           </CardContent>
         </Card>

@@ -9,9 +9,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
-import { Loader2, Plus, Search, Wrench, Calendar, DollarSign } from "lucide-react";
+import { Loader2, Plus, Search, Wrench, Calendar, DollarSign, Edit, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { format } from "date-fns";
 
 interface Maintenance {
@@ -51,6 +51,7 @@ export default function MaintenanceManagement() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingRecord, setEditingRecord] = useState<Maintenance | null>(null);
   const [dateRange, setDateRange] = useState<any>({});
   const [selectedTruck, setSelectedTruck] = useState<string>('');
   const [formData, setFormData] = useState({
@@ -60,8 +61,6 @@ export default function MaintenanceManagement() {
     cost: '',
     maintenance_date: format(new Date(), 'yyyy-MM-dd')
   });
-
-  const { toast } = useToast();
 
   useEffect(() => {
     fetchMaintenanceRecords();
@@ -95,14 +94,17 @@ export default function MaintenanceManagement() {
         `)
         .order('maintenance_date', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching maintenance records:', error);
+        toast.error('Failed to fetch maintenance records');
+        return;
+      }
+
+      console.log('Fetched maintenance records:', data);
       setMaintenanceRecords(data || []);
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      console.error('Unexpected error:', error);
+      toast.error('An unexpected error occurred');
     } finally {
       setLoading(false);
     }
@@ -126,7 +128,7 @@ export default function MaintenanceManagement() {
         `);
 
       if (searchTerm) {
-        query = query.or(`description.ilike.%${searchTerm}%,trucks.plate_number.ilike.%${searchTerm}%`);
+        query = query.or(`description.ilike.%${searchTerm}%`);
       }
 
       if (dateRange.from) {
@@ -143,14 +145,16 @@ export default function MaintenanceManagement() {
 
       const { data, error } = await query.order('maintenance_date', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error filtering maintenance records:', error);
+        toast.error('Failed to filter maintenance records');
+        return;
+      }
+
       setMaintenanceRecords(data || []);
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      console.error('Unexpected error:', error);
+      toast.error('An unexpected error occurred');
     } finally {
       setLoading(false);
     }
@@ -163,14 +167,16 @@ export default function MaintenanceManagement() {
         .select('id, plate_number, model')
         .order('plate_number');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching trucks:', error);
+        toast.error('Failed to fetch trucks');
+        return;
+      }
+
       setTrucks(data || []);
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      console.error('Unexpected error:', error);
+      toast.error('Failed to fetch trucks');
     }
   };
 
@@ -179,17 +185,19 @@ export default function MaintenanceManagement() {
       const { data, error } = await supabase
         .from('trips')
         .select('id, origin, destination')
-        .eq('status', 'ongoing')
+        .in('status', ['ongoing', 'scheduled'])
         .order('scheduled_date', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching trips:', error);
+        toast.error('Failed to fetch trips');
+        return;
+      }
+
       setTrips(data || []);
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      console.error('Unexpected error:', error);
+      toast.error('Failed to fetch trips');
     }
   };
 
@@ -197,56 +205,108 @@ export default function MaintenanceManagement() {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const resetForm = () => {
+    setFormData({
+      truck_id: '',
+      trip_id: '',
+      description: '',
+      cost: '',
+      maintenance_date: format(new Date(), 'yyyy-MM-dd')
+    });
+    setEditingRecord(null);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.truck_id || !formData.description || !formData.cost) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
+      toast.error('Please fill in all required fields (truck, description, and cost)');
+      return;
+    }
+
+    try {
+      const maintenanceData = {
+        truck_id: formData.truck_id,
+        trip_id: formData.trip_id || null,
+        description: formData.description,
+        cost: parseFloat(formData.cost),
+        maintenance_date: formData.maintenance_date
+      };
+
+      let result;
+      if (editingRecord) {
+        // Update existing record
+        result = await supabase
+          .from('maintenance')
+          .update(maintenanceData)
+          .eq('id', editingRecord.id);
+      } else {
+        // Create new record
+        result = await supabase
+          .from('maintenance')
+          .insert(maintenanceData);
+      }
+
+      if (result.error) {
+        console.error('Error saving maintenance record:', result.error);
+        toast.error('Failed to save maintenance record');
+        return;
+      }
+
+      toast.success(editingRecord ? 'Maintenance record updated successfully' : 'Maintenance record created successfully');
+      setDialogOpen(false);
+      resetForm();
+      fetchMaintenanceRecords();
+    } catch (error: any) {
+      console.error('Unexpected error:', error);
+      toast.error('An unexpected error occurred');
+    }
+  };
+
+  const handleEdit = (record: Maintenance) => {
+    setEditingRecord(record);
+    setFormData({
+      truck_id: record.truck_id,
+      trip_id: record.trip_id || '',
+      description: record.description,
+      cost: record.cost.toString(),
+      maintenance_date: format(new Date(record.maintenance_date), 'yyyy-MM-dd')
+    });
+    setDialogOpen(true);
+  };
+
+  const handleDelete = async (recordId: string) => {
+    if (!confirm('Are you sure you want to delete this maintenance record?')) {
       return;
     }
 
     try {
       const { error } = await supabase
         .from('maintenance')
-        .insert({
-          truck_id: formData.truck_id,
-          trip_id: formData.trip_id || null,
-          description: formData.description,
-          cost: parseFloat(formData.cost),
-          maintenance_date: formData.maintenance_date
-        });
+        .delete()
+        .eq('id', recordId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error deleting maintenance record:', error);
+        toast.error('Failed to delete maintenance record');
+        return;
+      }
 
-      toast({
-        title: "Success",
-        description: "Maintenance record created successfully",
-      });
-
-      setDialogOpen(false);
-      setFormData({
-        truck_id: '',
-        trip_id: '',
-        description: '',
-        cost: '',
-        maintenance_date: format(new Date(), 'yyyy-MM-dd')
-      });
+      toast.success('Maintenance record deleted successfully');
       fetchMaintenanceRecords();
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      console.error('Unexpected error:', error);
+      toast.error('An unexpected error occurred');
     }
   };
 
   const getTotalMaintenanceCost = () => {
     return maintenanceRecords.reduce((total, record) => total + record.cost, 0);
+  };
+
+  const handleDialogClose = () => {
+    setDialogOpen(false);
+    resetForm();
   };
 
   return (
@@ -259,22 +319,27 @@ export default function MaintenanceManagement() {
         
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button onClick={() => resetForm()}>
               <Plus className="h-4 w-4 mr-2" />
               Add Maintenance
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Add Maintenance Record</DialogTitle>
+              <DialogTitle>
+                {editingRecord ? 'Edit Maintenance Record' : 'Add Maintenance Record'}
+              </DialogTitle>
               <DialogDescription>
-                Create a new maintenance record for a truck
+                {editingRecord ? 'Update the maintenance record details' : 'Create a new maintenance record for a truck'}
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="truck_id">Truck *</Label>
-                <Select onValueChange={(value) => handleFormChange('truck_id', value)}>
+                <Select 
+                  value={formData.truck_id} 
+                  onValueChange={(value) => handleFormChange('truck_id', value)}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select truck" />
                   </SelectTrigger>
@@ -290,11 +355,15 @@ export default function MaintenanceManagement() {
 
               <div className="space-y-2">
                 <Label htmlFor="trip_id">Trip (Optional)</Label>
-                <Select onValueChange={(value) => handleFormChange('trip_id', value)}>
+                <Select 
+                  value={formData.trip_id} 
+                  onValueChange={(value) => handleFormChange('trip_id', value)}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select trip (optional)" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="">No trip selected</SelectItem>
                     {trips.map((trip) => (
                       <SelectItem key={trip.id} value={trip.id}>
                         {trip.origin} → {trip.destination}
@@ -310,7 +379,7 @@ export default function MaintenanceManagement() {
                   id="description"
                   value={formData.description}
                   onChange={(e) => handleFormChange('description', e.target.value)}
-                  placeholder="Describe the maintenance work"
+                  placeholder="Describe the maintenance work performed"
                   required
                 />
               </div>
@@ -321,6 +390,7 @@ export default function MaintenanceManagement() {
                   id="cost"
                   type="number"
                   step="0.01"
+                  min="0"
                   value={formData.cost}
                   onChange={(e) => handleFormChange('cost', e.target.value)}
                   placeholder="0.00"
@@ -340,10 +410,12 @@ export default function MaintenanceManagement() {
               </div>
 
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                <Button type="button" variant="outline" onClick={handleDialogClose}>
                   Cancel
                 </Button>
-                <Button type="submit">Create Maintenance</Button>
+                <Button type="submit">
+                  {editingRecord ? 'Update Maintenance' : 'Create Maintenance'}
+                </Button>
               </DialogFooter>
             </form>
           </DialogContent>
@@ -359,6 +431,9 @@ export default function MaintenanceManagement() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{maintenanceRecords.length}</div>
+            <p className="text-xs text-muted-foreground">
+              Maintenance records tracked
+            </p>
           </CardContent>
         </Card>
 
@@ -369,6 +444,9 @@ export default function MaintenanceManagement() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">${getTotalMaintenanceCost().toFixed(2)}</div>
+            <p className="text-xs text-muted-foreground">
+              Total maintenance expenses
+            </p>
           </CardContent>
         </Card>
 
@@ -381,6 +459,9 @@ export default function MaintenanceManagement() {
             <div className="text-2xl font-bold">
               ${maintenanceRecords.length > 0 ? (getTotalMaintenanceCost() / maintenanceRecords.length).toFixed(2) : '0.00'}
             </div>
+            <p className="text-xs text-muted-foreground">
+              Average cost per maintenance
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -398,7 +479,7 @@ export default function MaintenanceManagement() {
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="search"
-                  placeholder="Search description or truck..."
+                  placeholder="Search description..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-8"
@@ -459,50 +540,76 @@ export default function MaintenanceManagement() {
               <Loader2 className="h-8 w-8 animate-spin" />
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Truck</TableHead>
-                  <TableHead>Trip</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Cost</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {maintenanceRecords.map((record) => (
-                  <TableRow key={record.id}>
-                    <TableCell>
-                      {format(new Date(record.maintenance_date), 'MMM dd, yyyy')}
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{record.trucks.plate_number}</div>
-                        <div className="text-sm text-muted-foreground">{record.trucks.model}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {record.trips ? (
-                        <Badge variant="outline">
-                          {record.trips.origin} → {record.trips.destination}
-                        </Badge>
-                      ) : (
-                        <span className="text-muted-foreground">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell>{record.description}</TableCell>
-                    <TableCell className="font-medium">${record.cost.toFixed(2)}</TableCell>
-                  </TableRow>
-                ))}
-                {maintenanceRecords.length === 0 && (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center text-muted-foreground">
-                      No maintenance records found
-                    </TableCell>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Truck</TableHead>
+                    <TableHead>Trip</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Cost</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {maintenanceRecords.map((record) => (
+                    <TableRow key={record.id}>
+                      <TableCell>
+                        {format(new Date(record.maintenance_date), 'MMM dd, yyyy')}
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{record.trucks.plate_number}</div>
+                          <div className="text-sm text-muted-foreground">{record.trucks.model}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {record.trips ? (
+                          <Badge variant="outline">
+                            {record.trips.origin} → {record.trips.destination}
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="max-w-xs truncate" title={record.description}>
+                          {record.description}
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-medium">${record.cost.toFixed(2)}</TableCell>
+                      <TableCell>
+                        <div className="flex space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEdit(record)}
+                          >
+                            <Edit className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDelete(record.id)}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {maintenanceRecords.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                        No maintenance records found
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>

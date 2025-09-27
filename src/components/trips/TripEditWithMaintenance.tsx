@@ -53,6 +53,7 @@ export const TripEditWithMaintenance = ({ trip, open, onOpenChange, onTripUpdate
   });
   const [maintenanceItems, setMaintenanceItems] = useState<MaintenanceItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [savingMaintenance, setSavingMaintenance] = useState(false);
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [trucks, setTrucks] = useState<Truck[]>([]);
@@ -89,10 +90,21 @@ export const TripEditWithMaintenance = ({ trip, open, onOpenChange, onTripUpdate
         .eq('trip_id', trip.id);
 
       if (error) throw error;
+        console.error('Error fetching maintenance items:', error);
+        // Don't throw error, just log it and continue
+        setMaintenanceItems([]);
+        return;
+      // Transform the data to match our interface
+      const transformedItems = (data || []).map(item => ({
+        id: item.id,
+        description: item.description,
+        cost: Number(item.cost)
+      }));
       
-      setMaintenanceItems(data || []);
+      setMaintenanceItems(transformedItems);
     } catch (error: any) {
       console.error('Error fetching maintenance items:', error);
+      setMaintenanceItems([]);
     }
   };
 
@@ -124,8 +136,16 @@ export const TripEditWithMaintenance = ({ trip, open, onOpenChange, onTripUpdate
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setSavingMaintenance(false);
 
     try {
+      // Validate required fields
+      if (!form.customer_id || !form.origin || !form.destination || !form.driver_id || !form.truck_id) {
+        toast.error('Please fill in all required fields');
+        setLoading(false);
+        return;
+      }
+
       const updateData = {
         customer_id: form.customer_id,
         origin: form.origin,
@@ -149,25 +169,33 @@ export const TripEditWithMaintenance = ({ trip, open, onOpenChange, onTripUpdate
         .eq('id', trip.id);
 
       if (error) {
-        toast.error('Failed to update trip');
         console.error('Error:', error);
+        toast.error('Failed to update trip: ' + error.message);
         return;
       }
 
-      // Handle maintenance items
+      // Handle maintenance items separately
       if (maintenanceItems.length > 0) {
+        setSavingMaintenance(true);
+        
         // Delete existing maintenance items for this trip
-        await supabase
+        const { error: deleteError } = await supabase
           .from('maintenance')
           .delete()
           .eq('trip_id', trip.id);
+
+        if (deleteError) {
+          console.error('Error deleting old maintenance records:', deleteError);
+          // Continue anyway, we'll try to insert new ones
+        }
 
         // Insert new maintenance items
         const maintenanceRecords = maintenanceItems.map(item => ({
           trip_id: trip.id,
           truck_id: form.truck_id,
           description: item.description,
-          cost: item.cost
+          cost: item.cost,
+          maintenance_date: form.scheduled_date || new Date().toISOString().split('T')[0]
         }));
 
         const { error: maintenanceError } = await supabase
@@ -176,19 +204,26 @@ export const TripEditWithMaintenance = ({ trip, open, onOpenChange, onTripUpdate
 
         if (maintenanceError) {
           console.error('Maintenance error:', maintenanceError);
-          toast.error('Failed to update maintenance records');
+          toast.error('Trip updated but failed to save maintenance records: ' + maintenanceError.message);
           return;
         }
+      } else {
+        // If no maintenance items, delete any existing ones for this trip
+        await supabase
+          .from('maintenance')
+          .delete()
+          .eq('trip_id', trip.id);
       }
 
       toast.success('Trip and maintenance records updated successfully');
       onTripUpdated();
       onOpenChange(false);
     } catch (error) {
-      toast.error('An unexpected error occurred');
       console.error('Error:', error);
+      toast.error('An unexpected error occurred: ' + (error as Error).message);
     } finally {
       setLoading(false);
+      setSavingMaintenance(false);
     }
   };
 
@@ -403,11 +438,12 @@ export const TripEditWithMaintenance = ({ trip, open, onOpenChange, onTripUpdate
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
+              disabled={loading || savingMaintenance}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? "Updating..." : "Update Trip"}
+            <Button type="submit" disabled={loading || savingMaintenance}>
+              {loading ? "Updating Trip..." : savingMaintenance ? "Saving Maintenance..." : "Update Trip"}
             </Button>
           </div>
         </form>
