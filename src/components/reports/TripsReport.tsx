@@ -12,9 +12,9 @@ export const TripsReport = () => {
     { key: "truck", label: "Truck" },
     { key: "scheduled_date", label: "Scheduled Date" },
     { key: "status", label: "Status" },
-    { key: "distance", label: "Distance (miles)" },
-    { key: "cost", label: "Cost ($)" },
-    { key: "duration", label: "Duration (hours)" }
+    { key: "distance", label: "Distance (kilometers)" },
+    { key: "rate", label: "Rate ($)" },
+    { key: "duration", label: "Duration (days)" }
   ];
 
   // Define filter options
@@ -33,9 +33,9 @@ export const TripsReport = () => {
       label: "Distance Range",
       key: "distance_range",
       options: [
-        { label: "Short (<100 miles)", value: "short" },
-        { label: "Medium (100-500 miles)", value: "medium" },
-        { label: "Long (>500 miles)", value: "long" }
+        { label: "Short (<1000 kilometers)", value: "short" },
+        { label: "Medium (1000-5000 kilometers)", value: "medium" },
+        { label: "Long (>5000 kilometers)", value: "long" }
       ]
     }
   ];

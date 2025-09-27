@@ -77,7 +77,21 @@ export const ReportsTemplate: React.FC<ReportsTemplateProps> = ({
       }
 
       if (data && data.length > 0) {
-        setReportData(data);
+        let processed = data;
+        if (reportType === 'trips') {
+          processed = (data || []).map((trip: any) => {
+            const rate = Number(trip.RATE ?? trip.rate) || 0;
+            const road_tolls = Number(trip.ROAD_TOLLS ?? trip.road_tolls) || 0;
+            const fuel = Number(trip.FUEL ?? trip.fuel) || 0;
+            const mileage = Number(trip.MILEAGE ?? trip.mileage) || 0;
+            const salary = Number(trip.SALARY ?? trip.salary) || 0;
+            const maintenanceCost = (trip.maintenance || []).reduce((sum: number, m: any) => sum + (Number(m.cost) || 0), 0);
+            const totalCosts = fuel + mileage + salary + maintenanceCost + road_tolls;
+            const profit = rate - totalCosts;
+            return { ...trip, profit };
+          });
+        }
+        setReportData(processed);
         toast.success(`${title} report generated successfully with ${data.length} records`);
       } else {
         setReportData([]);
@@ -152,11 +166,12 @@ export const ReportsTemplate: React.FC<ReportsTemplateProps> = ({
           { key: 'destination', label: 'Destination' },
           { key: 'status', label: 'Status' },
           { key: 'scheduled_date', label: 'Scheduled Date' },
-          { key: 'cost', label: 'Cost' },
+          { key: 'rate', label: 'Rate' },
           { key: 'distance', label: 'Distance' },
           { key: 'duration', label: 'Duration' },
           { key: 'truck', label: 'Truck' },
-          { key: 'driver', label: 'Driver' }
+          { key: 'driver', label: 'Driver' },
+          { key: 'profit', label: 'Profit' }
         ];
       case 'customers':
         return [

@@ -129,9 +129,10 @@ export default function MaintenanceReports() {
         const fuel = Number(trip.FUEL) || 0;
         const mileage = Number(trip.MILEAGE) || 0;
         const salary = Number(trip.SALARY) || 0;
+        const roadTolls = Number(trip.ROAD_TOLLS) || 0;
         const maintenanceCost = (trip.maintenance || []).reduce((sum: number, m: any) => sum + (Number(m.cost) || 0), 0);
-        
-        const totalCosts = fuel + mileage + salary + maintenanceCost;
+
+        const totalCosts = fuel + mileage + salary + maintenanceCost + roadTolls;
         const profit = rate - totalCosts;
         const profitMargin = rate > 0 ? (profit / rate) * 100 : 0;
 
