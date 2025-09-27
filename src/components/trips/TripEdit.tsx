@@ -43,6 +43,9 @@ export const TripEdit = ({ trip, open, onOpenChange, onTripUpdated }: TripEditPr
     road_tolls: "",
     status: ""
   });
+  // Maintenance items state
+  const [maintenanceItems, setMaintenanceItems] = useState<{ description: string; cost: number; id: string }[]>([]);
+  const [newMaintenance, setNewMaintenance] = useState({ description: "", cost: "" });
   const [loading, setLoading] = useState(false);
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -64,6 +67,16 @@ export const TripEdit = ({ trip, open, onOpenChange, onTripUpdated }: TripEditPr
         road_tolls: trip["ROAD TOLLS"] ? trip["ROAD TOLLS"].toString() : "",
         status: trip.status || "scheduled"
       });
+      // Load maintenance items if available (for edit)
+      if (trip.maintenance && Array.isArray(trip.maintenance)) {
+        setMaintenanceItems(trip.maintenance.map((item: any) => ({
+          id: item.id || Math.random().toString(),
+          description: item.description,
+          cost: item.cost
+        })));
+      } else {
+        setMaintenanceItems([]);
+      }
       fetchDropdownData();
     }
   }, [trip, open]);
@@ -91,6 +104,49 @@ export const TripEdit = ({ trip, open, onOpenChange, onTripUpdated }: TripEditPr
 
   const handleSelectChange = (name: string, value: string) => {
     setForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  // Maintenance item handlers
+  const handleAddMaintenance = () => {
+    if (!newMaintenance.description.trim() || !newMaintenance.cost.trim()) {
+      toast.error('Please fill in both description and cost');
+      return;
+    }
+    const costValue = parseFloat(newMaintenance.cost);
+    if (isNaN(costValue) || costValue < 0) {
+      toast.error('Please enter a valid cost amount');
+      return;
+    }
+    setMaintenanceItems(prev => [...prev, {
+      id: Date.now().toString(),
+      description: newMaintenance.description.trim(),
+      cost: costValue
+    }]);
+    setNewMaintenance({ description: "", cost: "" });
+    toast.success('Maintenance item added');
+  };
+
+  const handleRemoveMaintenance = (id: string) => {
+    setMaintenanceItems(prev => prev.filter(item => item.id !== id));
+    toast.success('Maintenance item removed');
+  };
+
+  const handleUpdateMaintenance = (id: string, field: 'description' | 'cost', value: string) => {
+    setMaintenanceItems(prev => prev.map(item => {
+      if (item.id === id) {
+        if (field === 'cost') {
+          const costValue = parseFloat(value);
+          if (isNaN(costValue) || costValue < 0) {
+            toast.error('Please enter a valid cost amount');
+            return item;
+          }
+          return { ...item, cost: costValue };
+        } else {
+          return { ...item, [field]: value };
+        }
+      }
+      return item;
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -125,6 +181,25 @@ export const TripEdit = ({ trip, open, onOpenChange, onTripUpdated }: TripEditPr
         return;
       }
 
+      // Insert maintenance records for this trip
+      if (maintenanceItems.length > 0) {
+        const maintenancePayload = maintenanceItems.map(item => ({
+          trip_id: trip.id,
+          truck_id: form.truck_id,
+          description: item.description,
+          cost: item.cost,
+          maintenance_date: form.scheduled_date || new Date().toISOString().split('T')[0]
+        }));
+        const { error: maintenanceError } = await supabase
+          .from('maintenance')
+          .insert(maintenancePayload);
+        if (maintenanceError) {
+          toast.error('Failed to save maintenance records');
+          console.error('Maintenance error:', maintenanceError);
+          // Do not return; allow trip update to succeed
+        }
+      }
+
       toast.success('Trip updated successfully');
       onTripUpdated();
       onOpenChange(false);
@@ -144,7 +219,6 @@ export const TripEdit = ({ trip, open, onOpenChange, onTripUpdated }: TripEditPr
         <DialogHeader>
           <DialogTitle>Edit Trip - {trip.id}</DialogTitle>
         </DialogHeader>
-        
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -165,7 +239,6 @@ export const TripEdit = ({ trip, open, onOpenChange, onTripUpdated }: TripEditPr
                 </SelectContent>
               </Select>
             </div>
-            
             <div>
               <label className="block text-sm font-medium mb-1">Scheduled Date</label>
               <Input
@@ -176,6 +249,92 @@ export const TripEdit = ({ trip, open, onOpenChange, onTripUpdated }: TripEditPr
                 required
               />
             </div>
+          </div>
+
+          {/* Maintenance Section */}
+          <div className="border rounded-lg p-4 bg-secondary/20 space-y-4">
+            <div className="font-semibold mb-2">Maintenance Expenses</div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="maintenance-desc" className="block text-sm font-medium">Description</label>
+                <textarea
+                  id="maintenance-desc"
+                  placeholder="Describe maintenance work"
+                  value={newMaintenance.description}
+                  onChange={e => setNewMaintenance(prev => ({ ...prev, description: e.target.value }))}
+                  rows={2}
+                  className="w-full border rounded px-2 py-1"
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="maintenance-cost" className="block text-sm font-medium">Cost ($)</label>
+                <input
+                  id="maintenance-cost"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="0.00"
+                  value={newMaintenance.cost}
+                  onChange={e => setNewMaintenance(prev => ({ ...prev, cost: e.target.value }))}
+                  className="w-full border rounded px-2 py-1"
+                />
+              </div>
+              <div className="flex items-end">
+                <Button type="button" onClick={handleAddMaintenance} className="w-full">
+                  Add Item
+                </Button>
+              </div>
+            </div>
+            {/* List of maintenance items */}
+            {maintenanceItems.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-base font-semibold">Maintenance Items ({maintenanceItems.length})</span>
+                  <span className="text-lg font-bold text-primary">Total: ${maintenanceItems.reduce((total, item) => total + item.cost, 0).toFixed(2)}</span>
+                </div>
+                <div className="space-y-3">
+                  {maintenanceItems.map(item => (
+                    <div key={item.id} className="flex items-start gap-4 p-4 border rounded-lg bg-card">
+                      <div className="flex-1 space-y-2">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="text-xs text-muted-foreground">Description</label>
+                            <textarea
+                              value={item.description}
+                              onChange={e => handleUpdateMaintenance(item.id, 'description', e.target.value)}
+                              placeholder="Maintenance description"
+                              rows={2}
+                              className="w-full border rounded px-2 py-1 mt-1"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs text-muted-foreground">Cost ($)</label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={item.cost}
+                              onChange={e => handleUpdateMaintenance(item.id, 'cost', e.target.value)}
+                              placeholder="0.00"
+                              className="w-full border rounded px-2 py-1 mt-1"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <Button type="button" variant="outline" size="sm" onClick={() => handleRemoveMaintenance(item.id)} className="text-destructive hover:text-destructive">
+                        Remove
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {maintenanceItems.length === 0 && (
+              <div className="text-center py-4 text-muted-foreground">
+                <span>No maintenance items added yet</span>
+                <span className="block text-sm">Use the form above to add maintenance expenses</span>
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

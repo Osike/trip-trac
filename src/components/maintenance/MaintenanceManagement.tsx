@@ -139,7 +139,7 @@ export default function MaintenanceManagement() {
         query = query.lte('maintenance_date', format(dateRange.to, 'yyyy-MM-dd'));
       }
 
-      if (selectedTruck) {
+      if (selectedTruck && selectedTruck !== "all") {
         query = query.eq('truck_id', selectedTruck);
       }
 
@@ -344,7 +344,7 @@ export default function MaintenanceManagement() {
                     <SelectValue placeholder="Select truck" />
                   </SelectTrigger>
                   <SelectContent>
-                    {trucks.map((truck) => (
+                    {trucks.filter(truck => truck.id && truck.id !== "").map((truck) => (
                       <SelectItem key={truck.id} value={truck.id}>
                         {truck.plate_number} - {truck.model}
                       </SelectItem>
@@ -356,15 +356,15 @@ export default function MaintenanceManagement() {
               <div className="space-y-2">
                 <Label htmlFor="trip_id">Trip (Optional)</Label>
                 <Select 
-                  value={formData.trip_id} 
-                  onValueChange={(value) => handleFormChange('trip_id', value)}
+                  value={formData.trip_id || "none"} 
+                  onValueChange={(value) => handleFormChange('trip_id', value === "none" ? "" : value)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select trip (optional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No trip selected</SelectItem>
-                    {trips.map((trip) => (
+                    <SelectItem value="none">No trip selected</SelectItem>
+                    {trips.filter(trip => trip.id && trip.id !== "").map((trip) => (
                       <SelectItem key={trip.id} value={trip.id}>
                         {trip.origin} → {trip.destination}
                       </SelectItem>
@@ -489,13 +489,13 @@ export default function MaintenanceManagement() {
 
             <div className="space-y-2">
               <Label>Truck Filter</Label>
-              <Select value={selectedTruck} onValueChange={setSelectedTruck}>
+              <Select value={selectedTruck || "all"} onValueChange={setSelectedTruck}>
                 <SelectTrigger>
                   <SelectValue placeholder="All trucks" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All trucks</SelectItem>
-                  {trucks.map((truck) => (
+                  <SelectItem value="all">All trucks</SelectItem>
+                  {trucks.filter(truck => truck.id && truck.id !== "").map((truck) => (
                     <SelectItem key={truck.id} value={truck.id}>
                       {truck.plate_number} - {truck.model}
                     </SelectItem>
@@ -517,7 +517,7 @@ export default function MaintenanceManagement() {
             variant="outline" 
             onClick={() => {
               setSearchTerm('');
-              setSelectedTruck('');
+              setSelectedTruck('all');
               setDateRange({});
             }}
           >

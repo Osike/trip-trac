@@ -42,7 +42,7 @@ export default function MaintenanceReports() {
   const [truckMaintenance, setTruckMaintenance] = useState<TruckMaintenanceData[]>([]);
   const [loading, setLoading] = useState(false);
   const [dateRange, setDateRange] = useState<any>({});
-  const [selectedTruck, setSelectedTruck] = useState<string>('');
+  const [selectedTruck, setSelectedTruck] = useState<string>('all');
   const [trucks, setTrucks] = useState<{ id: string; plate_number: string; model: string }[]>([]);
   const [activeTab, setActiveTab] = useState<'profits' | 'maintenance'>('profits');
 
@@ -112,7 +112,7 @@ export default function MaintenanceReports() {
         query = query.lte('scheduled_date', format(dateRange.to, 'yyyy-MM-dd'));
       }
 
-      if (selectedTruck) {
+      if (selectedTruck && selectedTruck !== "all") {
         query = query.eq('truck_id', selectedTruck);
       }
 
@@ -171,7 +171,7 @@ export default function MaintenanceReports() {
           maintenance(cost, maintenance_date)
         `);
 
-      if (selectedTruck) {
+      if (selectedTruck && selectedTruck !== "all") {
         query = query.eq('id', selectedTruck);
       }
 
@@ -356,8 +356,8 @@ export default function MaintenanceReports() {
                   <SelectValue placeholder="All trucks" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All trucks</SelectItem>
-                  {trucks.map((truck) => (
+                  <SelectItem value="all">All trucks</SelectItem>
+                  {trucks.filter(truck => truck.id && truck.id !== "").map((truck) => (
                     <SelectItem key={truck.id} value={truck.id}>
                       {truck.plate_number} - {truck.model}
                     </SelectItem>
@@ -371,7 +371,7 @@ export default function MaintenanceReports() {
                 variant="outline" 
                 onClick={() => {
                   setDateRange({});
-                  setSelectedTruck('');
+                  setSelectedTruck('all');
                 }}
               >
                 Clear Filters
