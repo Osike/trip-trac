@@ -85,6 +85,54 @@ export type Database = {
         }
         Relationships: []
       }
+      maintenance: {
+        Row: {
+          cost: number
+          created_at: string
+          description: string
+          id: string
+          maintenance_date: string
+          trip_id: string | null
+          truck_id: string
+          updated_at: string
+        }
+        Insert: {
+          cost?: number
+          created_at?: string
+          description: string
+          id?: string
+          maintenance_date?: string
+          trip_id?: string | null
+          truck_id: string
+          updated_at?: string
+        }
+        Update: {
+          cost?: number
+          created_at?: string
+          description?: string
+          id?: string
+          maintenance_date?: string
+          trip_id?: string | null
+          truck_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_truck_id_fkey"
+            columns: ["truck_id"]
+            isOneToOne: false
+            referencedRelation: "trucks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -120,45 +168,57 @@ export type Database = {
       }
       trips: {
         Row: {
-          cost: number | null
           created_at: string
           customer_id: string
           destination: string
           distance: number | null
           driver_id: string
           duration: number | null
+          FUEL: number | null
           id: string
+          MILEAGE: number | null
           origin: string
+          RATE: number | null
+          "ROAD TOLLS": number | null
+          SALARY: number | null
           scheduled_date: string
           status: Database["public"]["Enums"]["trip_status"]
           truck_id: string
           updated_at: string
         }
         Insert: {
-          cost?: number | null
           created_at?: string
           customer_id: string
           destination: string
           distance?: number | null
           driver_id: string
           duration?: number | null
+          FUEL?: number | null
           id?: string
+          MILEAGE?: number | null
           origin: string
+          RATE?: number | null
+          "ROAD TOLLS"?: number | null
+          SALARY?: number | null
           scheduled_date: string
           status?: Database["public"]["Enums"]["trip_status"]
           truck_id: string
           updated_at?: string
         }
         Update: {
-          cost?: number | null
           created_at?: string
           customer_id?: string
           destination?: string
           distance?: number | null
           driver_id?: string
           duration?: number | null
+          FUEL?: number | null
           id?: string
+          MILEAGE?: number | null
           origin?: string
+          RATE?: number | null
+          "ROAD TOLLS"?: number | null
+          SALARY?: number | null
           scheduled_date?: string
           status?: Database["public"]["Enums"]["trip_status"]
           truck_id?: string

@@ -10,7 +10,9 @@ import {
   LogOut,
   Settings,
   User,
-  FileText
+  FileText,
+  Wrench,
+  ClipboardList
 } from "lucide-react";
 import { useState } from "react";
 
@@ -42,6 +44,8 @@ export const Navigation = ({ currentPage, onPageChange, onLogout, userProfile }:
     { id: 'trucks', label: 'Trucks', icon: Truck },
     { id: 'trips', label: 'Trips', icon: MapPin },
     { id: 'reports', label: 'Reports', icon: FileText },
+    { id: 'maintenance', label: 'Maintenance', icon: Wrench },
+    { id: 'maintenance-reports', label: 'Maintenance Reports', icon: ClipboardList },
   ];
 
   return (

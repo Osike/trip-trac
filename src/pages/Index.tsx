@@ -7,6 +7,7 @@ import { CustomersManagement } from "@/components/customers/CustomersManagement"
 import { TrucksManagement } from "@/components/trucks/TrucksManagement";
 import { TripsManagement } from "@/components/trips/TripsManagement";
 import { ReportsManagement } from "@/components/reports/ReportsManagement";
+import { MaintenanceManagement, MaintenanceReports } from "@/components/maintenance";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Truck, ArrowRight, Shield, Clock, BarChart3 } from "lucide-react";
@@ -185,6 +186,10 @@ const Index = () => {
         return <TripsManagement />;
       case "reports":
         return <ReportsManagement />;
+      case "maintenance":
+        return <MaintenanceManagement />;
+      case "maintenance-reports":
+        return <MaintenanceReports />;
       default:
         return <DashboardOverview />;
     }

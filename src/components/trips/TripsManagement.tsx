@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { TripDetails } from "./TripDetails";
-import { TripEdit } from "./TripEdit";
+import { TripEditWithMaintenance } from "./TripEditWithMaintenance";
 import { TripActions } from "./TripActions";
 import { TripStatistics } from "./TripStatistics";
 
@@ -217,7 +217,7 @@ export const TripsManagement = () => {
       }
 
       // Transform data for display
-      const formattedTrips = (data as TripFromDB[]).map(trip => ({
+      const formattedTrips = (data as any[]).map(trip => ({
         id: trip.id,
         customer: trip.customers?.name || 'Unknown Customer',
         origin: trip.origin,
@@ -265,7 +265,7 @@ export const TripsManagement = () => {
       }
 
       // Transform data for display
-      const formattedTrips = (data as TripFromDB[]).map(trip => ({
+      const formattedTrips = (data as any[]).map(trip => ({
         id: trip.id,
         customer: trip.customers?.name || 'Unknown Customer',
         origin: trip.origin,
@@ -689,7 +689,7 @@ export const TripsManagement = () => {
       />
 
       {/* Trip Edit Modal */}
-      <TripEdit
+      <TripEditWithMaintenance
         trip={selectedTrip}
         open={tripEditOpen}
         onOpenChange={setTripEditOpen}
