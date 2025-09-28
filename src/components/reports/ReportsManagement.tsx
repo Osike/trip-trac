@@ -6,7 +6,7 @@ import { BarChart, FileText, Truck as TruckIcon, Users as UsersIcon, ClipboardLi
 import { TripsReport } from "./TripsReport";
 import { CustomersReport } from "./CustomersReport";
 import { TrucksReport } from "./TrucksReport";
-import { TruckLogReport } from "./TruckLogReport";
+// ...existing code...
 
 export const ReportsManagement = () => {
   const [activeTab, setActiveTab] = useState("trips");
@@ -26,7 +26,7 @@ export const ReportsManagement = () => {
             onValueChange={setActiveTab}
             className="w-full"
           >
-            <TabsList className="w-full grid grid-cols-4 rounded-none">
+            <TabsList className="w-full grid grid-cols-3 rounded-none justify-items-stretch">
               <TabsTrigger value="trips" className="py-3">
                 <FileText className="h-4 w-4 mr-2" />
                 Trips
@@ -38,10 +38,6 @@ export const ReportsManagement = () => {
               <TabsTrigger value="trucks" className="py-3">
                 <TruckIcon className="h-4 w-4 mr-2" />
                 Trucks
-              </TabsTrigger>
-              <TabsTrigger value="trucklog" className="py-3">
-                <ClipboardList className="h-4 w-4 mr-2" />
-                Truck Log
               </TabsTrigger>
             </TabsList>
             
@@ -57,9 +53,6 @@ export const ReportsManagement = () => {
               <TrucksReport />
             </TabsContent>
             
-            <TabsContent value="trucklog" className="mt-0">
-              <TruckLogReport />
-            </TabsContent>
           </Tabs>
         </CardContent>
       </Card>

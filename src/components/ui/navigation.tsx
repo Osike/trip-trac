@@ -36,6 +36,7 @@ interface NavigationProps {
 
 export const Navigation = ({ currentPage, onPageChange, onLogout, userProfile }: NavigationProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMaintenanceMobileOpen, setIsMaintenanceMobileOpen] = useState(false);
 
   const navigationItems = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
@@ -44,6 +45,8 @@ export const Navigation = ({ currentPage, onPageChange, onLogout, userProfile }:
     { id: 'trucks', label: 'Trucks', icon: Truck },
     { id: 'trips', label: 'Trips', icon: MapPin },
     { id: 'reports', label: 'Reports', icon: FileText },
+  ];
+  const maintenanceMenuItems = [
     { id: 'maintenance', label: 'Maintenance', icon: Wrench },
     { id: 'maintenance-reports', label: 'Maintenance Reports', icon: ClipboardList },
   ];
@@ -74,6 +77,36 @@ export const Navigation = ({ currentPage, onPageChange, onLogout, userProfile }:
                   <span>{label}</span>
                 </Button>
               ))}
+              {/* Maintenance Dropdown */}
+              <div className="relative group">
+                <Button
+                  variant={maintenanceMenuItems.some(mi => mi.id === currentPage) ? "default" : "ghost"}
+                  className={cn(
+                    "flex items-center space-x-2 transition-all duration-200",
+                    maintenanceMenuItems.some(mi => mi.id === currentPage) && "bg-gradient-primary text-primary-foreground shadow-glow"
+                  )}
+                >
+                  <Wrench className="h-4 w-4" />
+                  <span>Maintenance</span>
+                  <svg className="ml-1 h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.24 4.24a.75.75 0 0 1-1.06 0L5.21 8.29a.75.75 0 0 1 .02-1.08z" /></svg>
+                </Button>
+                <div className="absolute left-0 mt-2 w-48 bg-card border border-border rounded shadow-lg z-10 hidden group-hover:block">
+                  {maintenanceMenuItems.map(({ id, label, icon: Icon }) => (
+                    <Button
+                      key={id}
+                      variant={currentPage === id ? "default" : "ghost"}
+                      className={cn(
+                        "w-full flex items-center space-x-2 px-4 py-2 text-left",
+                        currentPage === id && "bg-gradient-primary text-primary-foreground"
+                      )}
+                      onClick={() => onPageChange(id)}
+                    >
+                      <Icon className="h-4 w-4" />
+                      <span>{label}</span>
+                    </Button>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -133,6 +166,45 @@ export const Navigation = ({ currentPage, onPageChange, onLogout, userProfile }:
                   <span>{label}</span>
                 </Button>
               ))}
+              {/* Maintenance Dropdown for mobile (collapsible) */}
+              <div className="space-y-1">
+                <Button
+                  variant={maintenanceMenuItems.some(mi => mi.id === currentPage) ? "default" : "ghost"}
+                  className={cn(
+                    "w-full justify-start flex items-center space-x-2",
+                    maintenanceMenuItems.some(mi => mi.id === currentPage) && "bg-gradient-primary text-primary-foreground"
+                  )}
+                  onClick={() => setIsMaintenanceMobileOpen(open => !open)}
+                  aria-expanded={isMaintenanceMobileOpen}
+                  aria-controls="maintenance-mobile-menu"
+                >
+                  <Wrench className="h-4 w-4" />
+                  <span>Maintenance</span>
+                  <svg className={cn("ml-1 h-3 w-3 transition-transform", isMaintenanceMobileOpen ? "rotate-180" : "rotate-0")} viewBox="0 0 20 20" fill="currentColor"><path d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.24 4.24a.75.75 0 0 1-1.06 0L5.21 8.29a.75.75 0 0 1 .02-1.08z" /></svg>
+                </Button>
+                {isMaintenanceMobileOpen && (
+                  <div className="pl-6" id="maintenance-mobile-menu">
+                    {maintenanceMenuItems.map(({ id, label, icon: Icon }) => (
+                      <Button
+                        key={id}
+                        variant={currentPage === id ? "default" : "ghost"}
+                        className={cn(
+                          "w-full flex items-center space-x-2 px-4 py-2 text-left",
+                          currentPage === id && "bg-gradient-primary text-primary-foreground"
+                        )}
+                        onClick={() => {
+                          onPageChange(id);
+                          setIsMobileMenuOpen(false);
+                          setIsMaintenanceMobileOpen(false);
+                        }}
+                      >
+                        <Icon className="h-4 w-4" />
+                        <span>{label}</span>
+                      </Button>
+                    ))}
+                  </div>
+                )}
+              </div>
               <div className="pt-2 mt-2 border-t border-border space-y-1">
                 <Button variant="ghost" className="w-full justify-start">
                   <Settings className="h-4 w-4 mr-2" />
