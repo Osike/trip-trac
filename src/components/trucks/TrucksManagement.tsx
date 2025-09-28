@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Search, Truck, User, Weight, Settings, Loader2 } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { Dialog, DialogTrigger, DialogContent, DialogClose, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -15,8 +16,6 @@ interface TruckFromDB {
   capacity: number | null;
   status: "active" | "inactive" | "maintenance";
   assigned_driver_id: string | null;
-  mileage: number | null;
-  last_maintenance: string | null;
   created_at: string;
   updated_at: string;
   profiles?: {
@@ -31,8 +30,6 @@ interface DisplayTruck {
   capacity: string;
   status: string;
   assignedDriver: string | null;
-  mileage: string;
-  lastMaintenance: string;
 }
 export const TrucksManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -41,10 +38,8 @@ export const TrucksManagement = () => {
     plate_number: "",
     model: "",
     capacity: "",
-    status: "active", // must be 'active', 'inactive', or 'maintenance'
+    status: "active" as "active" | "inactive" | "maintenance",
     assigned_driver_id: "",
-    mileage: "",
-    last_maintenance: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -92,8 +87,6 @@ export const TrucksManagement = () => {
         capacity: `${truck.capacity || 0} tons`,
         status: truck.status.charAt(0).toUpperCase() + truck.status.slice(1),
         assignedDriver: truck.profiles?.name || null,
-        mileage: `${truck.mileage || 0} km`,
-        lastMaintenance: truck.last_maintenance || 'Not recorded'
       }));
 
       setTrucks(formattedTrucks);
@@ -129,8 +122,6 @@ export const TrucksManagement = () => {
         capacity: `${truck.capacity || 0} tons`,
         status: truck.status.charAt(0).toUpperCase() + truck.status.slice(1),
         assignedDriver: truck.profiles?.name || null,
-        mileage: `${truck.mileage || 0} km`,
-        lastMaintenance: truck.last_maintenance || 'Not recorded'
       }));
 
       setTrucks(formattedTrucks);
@@ -156,6 +147,10 @@ export const TrucksManagement = () => {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleStatusChange = (value: "active" | "inactive" | "maintenance") => {
+    setForm((prev) => ({ ...prev, status: value }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -171,16 +166,12 @@ export const TrucksManagement = () => {
         capacity?: number | null;
         status?: "active" | "inactive" | "maintenance";
         assigned_driver_id?: string | null;
-        mileage?: number | null;
-        last_maintenance?: string | null;
       } = {
         plate_number: form.plate_number,
         model: form.model,
         capacity: form.capacity ? Number(form.capacity) : null,
         status: statusValue,
         assigned_driver_id: form.assigned_driver_id || null,
-        mileage: form.mileage ? Number(form.mileage) : null,
-        last_maintenance: form.last_maintenance || null
       };
       
       const { error: truckError } = await supabase.from("trucks").insert(payload);
@@ -202,8 +193,6 @@ export const TrucksManagement = () => {
       capacity: "",
       status: "active",
       assigned_driver_id: "",
-      mileage: "",
-      last_maintenance: "",
     });
     
     // Refresh trucks list
@@ -239,11 +228,18 @@ export const TrucksManagement = () => {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Input name="capacity" placeholder="Capacity (tons)" value={form.capacity} onChange={handleFormChange} required />
-                  <Input name="mileage" placeholder="Mileage (km)" value={form.mileage} onChange={handleFormChange} required />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Input name="status" placeholder="Status (active/inactive/maintenance)" value={form.status} onChange={handleFormChange} required />
-                  <Input name="last_maintenance" type="date" value={form.last_maintenance} onChange={handleFormChange} required />
+                  <div className="space-y-2">
+                    <Select value={form.status} onValueChange={handleStatusChange} required>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="inactive">Inactive</SelectItem>
+                        <SelectItem value="maintenance">Maintenance</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <Input name="assigned_driver_id" placeholder="Assigned Driver ID (optional)" value={form.assigned_driver_id} onChange={handleFormChange} />
                 
@@ -326,14 +322,6 @@ export const TrucksManagement = () => {
                           Driver:
                         </span>
                         <span className="font-medium">{truck.assignedDriver || 'Unassigned'}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Mileage:</span>
-                        <span className="font-medium">{truck.mileage}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Last Service:</span>
-                        <span className="font-medium">{truck.lastMaintenance}</span>
                       </div>
                     </div>
                     <div className="flex space-x-2 pt-2">
