@@ -125,7 +125,7 @@ export const Navigation = ({ currentPage, onPageChange, onLogout, userProfile }:
                 </span>
               </div>
             </div>
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" onClick={() => onPageChange('settings')}>
               <Settings className="h-4 w-4" />
             </Button>
             <Button variant="ghost" size="sm" onClick={onLogout}>
@@ -206,7 +206,7 @@ export const Navigation = ({ currentPage, onPageChange, onLogout, userProfile }:
                 )}
               </div>
               <div className="pt-2 mt-2 border-t border-border space-y-1">
-                <Button variant="ghost" className="w-full justify-start">
+                <Button variant="ghost" className="w-full justify-start" onClick={() => { onPageChange('settings'); setIsMobileMenuOpen(false); }}>
                   <Settings className="h-4 w-4 mr-2" />
                   Settings
                 </Button>

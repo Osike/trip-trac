@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Truck, ArrowRight, Shield, Clock, BarChart3 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import heroImage from "@/assets/logistics-hero.jpg";
+import SettingsTab from "@/components/settings/SettingsTab";
 
 const Index = () => {
   const [currentPage, setCurrentPage] = useState("dashboard");
@@ -190,6 +191,8 @@ const Index = () => {
         return <MaintenanceManagement />;
       case "maintenance-reports":
         return <MaintenanceReports />;
+      case "settings":
+        return <SettingsTab userProfile={profile} />;
       default:
         return <DashboardOverview />;
     }
