@@ -77,21 +77,7 @@ export const ReportsTemplate: React.FC<ReportsTemplateProps> = ({
       }
 
       if (data && data.length > 0) {
-        let processed = data;
-        if (reportType === 'trips') {
-          processed = (data || []).map((trip: any) => {
-            const rate = Number(trip.RATE ?? trip.rate) || 0;
-            const road_tolls = Number(trip.ROAD_TOLLS ?? trip.road_tolls) || 0;
-            const fuel = Number(trip.FUEL ?? trip.fuel) || 0;
-            const mileage = Number(trip.MILEAGE ?? trip.mileage) || 0;
-            const salary = Number(trip.SALARY ?? trip.salary) || 0;
-            const maintenanceCost = (trip.maintenance || []).reduce((sum: number, m: any) => sum + (Number(m.cost) || 0), 0);
-            const totalCosts = fuel + mileage + salary + maintenanceCost + road_tolls;
-            const profit = rate - totalCosts;
-            return { ...trip, profit };
-          });
-        }
-        setReportData(processed);
+        setReportData(data);
         toast.success(`${title} report generated successfully with ${data.length} records`);
       } else {
         setReportData([]);
