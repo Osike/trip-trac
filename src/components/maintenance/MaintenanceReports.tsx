@@ -97,6 +97,7 @@ export default function MaintenanceReports() {
           "FUEL",
           "MILEAGE", 
           "SALARY",
+          "ROAD TOLLS",
           customers(name),
           trucks(plate_number),
           profiles(name),
