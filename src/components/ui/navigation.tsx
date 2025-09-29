@@ -151,15 +151,15 @@ export const Navigation = ({ currentPage, onPageChange, onLogout, userProfile }:
 
         {/* Mobile Navigation */}
         {isMobileMenuOpen && (
-          <div className="md:hidden border-t border-border mt-2 pt-2 pb-4 animate-fade-in">
-            <div className="space-y-1">
+          <div className="md:hidden border-t border-border mt-2 pt-1 pb-2 animate-fade-in bg-card rounded-xl shadow-lg mx-2">
+            <div className="space-y-2 px-2 py-1">
               {navigationItems.map(({ id, label, icon: Icon }) => (
                 <Button
                   key={id}
                   variant={currentPage === id ? "default" : "ghost"}
                   className={cn(
-                    "w-full justify-start flex items-center space-x-2",
-                    currentPage === id && "bg-gradient-primary text-primary-foreground"
+                    "w-full justify-start flex items-center space-x-3 text-base py-2 rounded-lg",
+                    currentPage === id && "bg-gradient-primary text-primary-foreground shadow"
                   )}
                   onClick={() => {
                     onPageChange(id);
@@ -167,7 +167,7 @@ export const Navigation = ({ currentPage, onPageChange, onLogout, userProfile }:
                   }}
                 >
                   <Icon className="h-4 w-4" />
-                  <span>{label}</span>
+                  <span className="font-semibold">{label}</span>
                 </Button>
               ))}
               {/* Maintenance Dropdown for mobile (collapsible) */}
@@ -175,16 +175,16 @@ export const Navigation = ({ currentPage, onPageChange, onLogout, userProfile }:
                 <Button
                   variant={maintenanceMenuItems.some(mi => mi.id === currentPage) ? "default" : "ghost"}
                   className={cn(
-                    "w-full justify-start flex items-center space-x-2",
-                    maintenanceMenuItems.some(mi => mi.id === currentPage) && "bg-gradient-primary text-primary-foreground"
+                    "w-full justify-start flex items-center space-x-3 text-base py-2 rounded-lg",
+                    maintenanceMenuItems.some(mi => mi.id === currentPage) && "bg-gradient-primary text-primary-foreground shadow"
                   )}
                   onClick={() => setIsMaintenanceMobileOpen(open => !open)}
                   aria-expanded={isMaintenanceMobileOpen}
                   aria-controls="maintenance-mobile-menu"
                 >
                   <Wrench className="h-4 w-4" />
-                  <span>Maintenance</span>
-                  <svg className={cn("ml-1 h-3 w-3 transition-transform", isMaintenanceMobileOpen ? "rotate-180" : "rotate-0")} viewBox="0 0 20 20" fill="currentColor"><path d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.24 4.24a.75.75 0 0 1-1.06 0L5.21 8.29a.75.75 0 0 1 .02-1.08z" /></svg>
+                  <span className="font-semibold">Maintenance</span>
+                  <svg className={cn("ml-2 h-4 w-4 transition-transform", isMaintenanceMobileOpen ? "rotate-180" : "rotate-0")} viewBox="0 0 20 20" fill="currentColor"><path d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.24 4.24a.75.75 0 0 1-1.06 0L5.21 8.29a.75.75 0 0 1 .02-1.08z" /></svg>
                 </Button>
                 {isMaintenanceMobileOpen && (
                   <div className="pl-6" id="maintenance-mobile-menu">
@@ -193,8 +193,8 @@ export const Navigation = ({ currentPage, onPageChange, onLogout, userProfile }:
                         key={id}
                         variant={currentPage === id ? "default" : "ghost"}
                         className={cn(
-                          "w-full flex items-center space-x-2 px-4 py-2 text-left",
-                          currentPage === id && "bg-gradient-primary text-primary-foreground"
+                          "w-full flex items-center space-x-3 px-4 py-2 text-left rounded-lg",
+                          currentPage === id && "bg-gradient-primary text-primary-foreground shadow"
                         )}
                         onClick={() => {
                           onPageChange(id);
@@ -203,16 +203,16 @@ export const Navigation = ({ currentPage, onPageChange, onLogout, userProfile }:
                         }}
                       >
                         <Icon className="h-4 w-4" />
-                        <span>{label}</span>
+                        <span className="font-semibold">{label}</span>
                       </Button>
                     ))}
                   </div>
                 )}
               </div>
               <div className="pt-2 mt-2 border-t border-border space-y-1">
-                <Button variant="ghost" className="w-full justify-start" onClick={() => { onPageChange('settings'); setIsMobileMenuOpen(false); }}>
+                <Button variant="ghost" className="w-full justify-start text-base py-2 rounded-lg" onClick={() => { onPageChange('settings'); setIsMobileMenuOpen(false); }}>
                   <Settings className="h-4 w-4 mr-2" />
-                  Settings
+                  <span className="font-semibold">Settings</span>
                 </Button>
               </div>
             </div>
