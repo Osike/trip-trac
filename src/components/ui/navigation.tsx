@@ -52,13 +52,15 @@ export const Navigation = ({ currentPage, onPageChange, onLogout, userProfile }:
   ];
 
   return (
-    <nav className="bg-card shadow-card border-b border-border">
+    <nav className="bg-gradient-header border-b border-border/20 shadow-lg backdrop-blur-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <div className="flex-shrink-0 flex items-center">
-              <Truck className="h-8 w-8 text-primary mr-2" />
-              <span className="text-xl font-bold text-foreground">TripTrac</span>
+              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary-glow/20 backdrop-blur-sm">
+                <Truck className="h-6 w-6 text-primary-foreground" />
+              </div>
+              <span className="ml-3 text-xl font-bold text-primary-foreground tracking-tight">TripTrac</span>
             </div>
             
             {/* Desktop Navigation */}
@@ -68,13 +70,15 @@ export const Navigation = ({ currentPage, onPageChange, onLogout, userProfile }:
                   key={id}
                   variant={currentPage === id ? "default" : "ghost"}
                   className={cn(
-                    "flex items-center space-x-2 transition-all duration-200",
-                    currentPage === id && "bg-gradient-primary text-primary-foreground shadow-glow"
+                    "flex items-center space-x-2 transition-all duration-300 font-medium",
+                    currentPage === id 
+                      ? "bg-primary-foreground/20 text-primary-foreground border border-primary-foreground/30 shadow-lg backdrop-blur-sm" 
+                      : "text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10"
                   )}
                   onClick={() => onPageChange(id)}
                 >
                   <Icon className="h-4 w-4" />
-                  <span>{label}</span>
+                  <span className="text-sm">{label}</span>
                 </Button>
               ))}
               {/* Maintenance Dropdown */}
@@ -82,27 +86,31 @@ export const Navigation = ({ currentPage, onPageChange, onLogout, userProfile }:
                 <Button
                   variant={maintenanceMenuItems.some(mi => mi.id === currentPage) ? "default" : "ghost"}
                   className={cn(
-                    "flex items-center space-x-2 transition-all duration-200",
-                    maintenanceMenuItems.some(mi => mi.id === currentPage) && "bg-gradient-primary text-primary-foreground shadow-glow"
+                    "flex items-center space-x-2 transition-all duration-300 font-medium",
+                    maintenanceMenuItems.some(mi => mi.id === currentPage)
+                      ? "bg-primary-foreground/20 text-primary-foreground border border-primary-foreground/30 shadow-lg backdrop-blur-sm"
+                      : "text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10"
                   )}
                 >
                   <Wrench className="h-4 w-4" />
-                  <span>Maintenance</span>
+                  <span className="text-sm">Maintenance</span>
                   <svg className="ml-1 h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.24 4.24a.75.75 0 0 1-1.06 0L5.21 8.29a.75.75 0 0 1 .02-1.08z" /></svg>
                 </Button>
-                <div className="absolute left-0 mt-2 w-48 bg-card border border-border rounded shadow-lg z-10 hidden group-hover:block">
+                <div className="absolute left-0 mt-2 w-56 bg-card/95 backdrop-blur-md border border-border/50 rounded-lg shadow-xl z-50 hidden group-hover:block animate-fade-in">
                   {maintenanceMenuItems.map(({ id, label, icon: Icon }) => (
                     <Button
                       key={id}
-                      variant={currentPage === id ? "default" : "ghost"}
+                      variant="ghost"
                       className={cn(
-                        "w-full flex items-center space-x-2 px-4 py-2 text-left",
-                        currentPage === id && "bg-gradient-primary text-primary-foreground"
+                        "w-full flex items-center space-x-2 px-4 py-3 text-left rounded-none first:rounded-t-lg last:rounded-b-lg font-medium transition-all duration-200",
+                        currentPage === id 
+                          ? "bg-primary text-primary-foreground" 
+                          : "hover:bg-secondary/80 text-foreground"
                       )}
                       onClick={() => onPageChange(id)}
                     >
                       <Icon className="h-4 w-4" />
-                      <span>{label}</span>
+                      <span className="text-sm">{label}</span>
                     </Button>
                   ))}
                 </div>
@@ -112,23 +120,33 @@ export const Navigation = ({ currentPage, onPageChange, onLogout, userProfile }:
 
           {/* Desktop Actions */}
           <div className="hidden md:flex md:items-center md:space-x-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 rounded-full bg-gradient-primary flex items-center justify-center">
+            <div className="flex items-center space-x-3 px-3 py-2 rounded-lg bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20">
+              <div className="w-8 h-8 rounded-lg bg-primary-glow flex items-center justify-center shadow-glow">
                 <User className="h-4 w-4 text-primary-foreground" />
               </div>
               <div className="flex flex-col">
-                <span className="text-sm font-medium text-foreground">
+                <span className="text-sm font-semibold text-primary-foreground">
                   {userProfile?.name || 'Loading...'}
                 </span>
-                <span className="text-xs text-muted-foreground capitalize">
+                <span className="text-xs text-primary-foreground/70 capitalize font-medium">
                   {userProfile?.role || ''}
                 </span>
               </div>
             </div>
-            <Button variant="ghost" size="sm" onClick={() => onPageChange('settings')}>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => onPageChange('settings')}
+              className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10 transition-all duration-200"
+            >
               <Settings className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="sm" onClick={onLogout}>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={onLogout}
+              className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10 transition-all duration-200"
+            >
               <LogOut className="h-4 w-4" />
             </Button>
           </div>
@@ -139,6 +157,7 @@ export const Navigation = ({ currentPage, onPageChange, onLogout, userProfile }:
               variant="ghost"
               size="sm"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10"
             >
               <Menu className="h-5 w-5" />
             </Button>

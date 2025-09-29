@@ -197,179 +197,194 @@ export const DashboardOverview = () => {
   };
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground">Welcome to your logistics command center</p>
-        </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button className="bg-gradient-primary hover:bg-gradient-primary/90 shadow-glow">
-              <FileText className="h-4 w-4 mr-2" />
-              Quick Actions
-              <ChevronDown className="h-4 w-4 ml-2" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56 bg-background border border-border shadow-lg z-50">
-            <DropdownMenuItem 
-              onClick={() => handleReportGeneration('Trips')}
-              className="cursor-pointer hover:bg-accent hover:text-accent-foreground"
-            >
-              <MapPin className="h-4 w-4 mr-2" />
-              Generate Trips Report
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              onClick={() => handleReportGeneration('Trucks')}
-              className="cursor-pointer hover:bg-accent hover:text-accent-foreground"
-            >
-              <Truck className="h-4 w-4 mr-2" />
-              Generate Trucks Report
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              onClick={() => handleReportGeneration('Customers')}
-              className="cursor-pointer hover:bg-accent hover:text-accent-foreground"
-            >
-              <Building2 className="h-4 w-4 mr-2" />
-              Generate Customers Report
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-
-      {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {loading ? (
-          Array(4).fill(0).map((_, i) => (
-            <Card key={i} className="shadow-card bg-card/60 animate-pulse">
-              <CardContent className="p-6 h-32"></CardContent>
-            </Card>
-          ))
-        ) : (
-          <>
-            <StatsCard
-              title="Total Trips"
-              value={stats.totalTrips.toString()}
-              change={`${stats.activeTrips} active trips`}
-              changeType="positive"
-              icon={MapPin}
-              className="animate-fade-in"
-              style={{ animationDelay: `0ms` }}
-            />
-            <StatsCard
-              title="Trucks"
-              value={stats.totalTrucks.toString()}
-              change={`${stats.activeTrucks} active trucks`}
-              changeType="positive"
-              icon={Truck}
-              className="animate-fade-in"
-              style={{ animationDelay: `100ms` }}
-            />
-            <StatsCard
-              title="Customers"
-              value={stats.totalCustomers.toString()}
-              change="Track customer activity"
-              changeType="neutral"
-              icon={Building2}
-              className="animate-fade-in"
-              style={{ animationDelay: `200ms` }}
-            />
-            <StatsCard
-              title="Team Members"
-              value={stats.totalUsers.toString()}
-              change={`${stats.totalDrivers} drivers`}
-              changeType="positive"
-              icon={Users}
-              className="animate-fade-in"
-              style={{ animationDelay: `300ms` }}
-            />
-          </>
-        )}
-      </div>
-
-      {/* Recent Activity */}
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card className="shadow-card">
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <TrendingUp className="h-5 w-5 mr-2 text-primary" />
-              Recent Trips
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="space-y-4">
-                {Array(5).fill(0).map((_, i) => (
-                  <div key={i} className="h-16 rounded-lg bg-secondary/30 animate-pulse"></div>
-                ))}
-              </div>
-            ) : recentTrips.length === 0 ? (
-              <div className="text-center py-8">
-                <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">No recent trips found</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {recentTrips.map((trip, idx) => (
-                  <div 
-                    key={trip.id} 
-                    className="flex items-center justify-between p-3 rounded-lg bg-secondary/50 animate-fade-in"
-                    style={{ animationDelay: `${idx * 100}ms` }}
-                  >
-                    <div className="space-y-1">
-                      <div className="flex items-center space-x-2">
-                        <span className="font-medium text-sm">{trip.id}</span>
-                        <span className={`text-xs font-medium ${getStatusColor(trip.status)}`}>
-                          {trip.status}
-                        </span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">{trip.customer} → {trip.destination}</p>
-                      <p className="text-xs text-muted-foreground">Driver: {trip.driver}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-card">
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Truck className="h-5 w-5 mr-2 text-primary" />
-              Fleet Status
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Active Trucks</span>
-                <span className="text-lg font-bold text-success">{loading ? <Loader2 className="inline h-5 w-5 animate-spin" /> : stats.activeTrucks}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">In Maintenance</span>
-                <span className="text-lg font-bold text-warning">{loading ? <Loader2 className="inline h-5 w-5 animate-spin" /> : (stats.totalTrucks - stats.activeTrucks)}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Total Trucks</span>
-                <span className="text-lg font-bold text-primary">{loading ? <Loader2 className="inline h-5 w-5 animate-spin" /> : stats.totalTrucks}</span>
-              </div>
-              <div className="pt-4">
-                <div className="w-full bg-secondary rounded-full h-2">
-                  <div
-                    className="bg-gradient-primary h-2 rounded-full"
-                    style={{ width: loading || stats.totalTrucks === 0 ? '0%' : `${Math.round((stats.activeTrucks / stats.totalTrucks) * 100)}%` }}
-                  ></div>
+    <div className="min-h-screen bg-gradient-to-br from-background via-secondary/30 to-background">
+      <div className="space-y-8 p-6 max-w-7xl mx-auto">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <h1 className="text-4xl font-bold text-foreground tracking-tight">Dashboard</h1>
+            <p className="text-lg text-muted-foreground">Your logistics command center</p>
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button className="bg-gradient-primary hover:opacity-90 shadow-lg transition-all duration-300 font-medium px-6 py-3">
+                <FileText className="h-4 w-4 mr-2" />
+                Quick Reports
+                <ChevronDown className="h-4 w-4 ml-2" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 bg-card/95 backdrop-blur-md border border-border/50 shadow-xl z-50 rounded-lg">
+              <DropdownMenuItem 
+                onClick={() => handleReportGeneration('Trips')}
+                className="cursor-pointer hover:bg-secondary/80 transition-colors duration-200 px-4 py-3 rounded-md mx-1 first:mt-1 last:mb-1"
+              >
+                <MapPin className="h-4 w-4 mr-3 text-primary" />
+                <div>
+                  <p className="font-medium">Trips Report</p>
+                  <p className="text-xs text-muted-foreground">Export trip data</p>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {loading || stats.totalTrucks === 0
-                    ? '--'
-                    : `${Math.round((stats.activeTrucks / stats.totalTrucks) * 100)}% fleet utilization`}
-                </p>
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => handleReportGeneration('Trucks')}
+                className="cursor-pointer hover:bg-secondary/80 transition-colors duration-200 px-4 py-3 rounded-md mx-1"
+              >
+                <Truck className="h-4 w-4 mr-3 text-primary" />
+                <div>
+                  <p className="font-medium">Trucks Report</p>
+                  <p className="text-xs text-muted-foreground">Fleet analytics</p>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => handleReportGeneration('Customers')}
+                className="cursor-pointer hover:bg-secondary/80 transition-colors duration-200 px-4 py-3 rounded-md mx-1"
+              >
+                <Building2 className="h-4 w-4 mr-3 text-primary" />
+                <div>
+                  <p className="font-medium">Customers Report</p>
+                  <p className="text-xs text-muted-foreground">Client data export</p>
+                </div>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        {/* Stats Grid */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          {loading ? (
+            Array(4).fill(0).map((_, i) => (
+              <Card key={i} className="shadow-lg bg-card/80 backdrop-blur-sm animate-pulse border-border/50">
+                <CardContent className="p-6 h-32"></CardContent>
+              </Card>
+            ))
+          ) : (
+            <>
+              <StatsCard
+                title="Total Trips"
+                value={stats.totalTrips.toString()}
+                change={`${stats.activeTrips} active trips`}
+                changeType="positive"
+                icon={MapPin}
+                className="animate-fade-in shadow-lg bg-card/80 backdrop-blur-sm border-border/50"
+                style={{ animationDelay: `0ms` }}
+              />
+              <StatsCard
+                title="Trucks"
+                value={stats.totalTrucks.toString()}
+                change={`${stats.activeTrucks} active trucks`}
+                changeType="positive"
+                icon={Truck}
+                className="animate-fade-in shadow-lg bg-card/80 backdrop-blur-sm border-border/50"
+                style={{ animationDelay: `100ms` }}
+              />
+              <StatsCard
+                title="Customers"
+                value={stats.totalCustomers.toString()}
+                change="Track customer activity"
+                changeType="neutral"
+                icon={Building2}
+                className="animate-fade-in shadow-lg bg-card/80 backdrop-blur-sm border-border/50"
+                style={{ animationDelay: `200ms` }}
+              />
+              <StatsCard
+                title="Team Members"
+                value={stats.totalUsers.toString()}
+                change={`${stats.totalDrivers} drivers`}
+                changeType="positive"
+                icon={Users}
+                className="animate-fade-in shadow-lg bg-card/80 backdrop-blur-sm border-border/50"
+                style={{ animationDelay: `300ms` }}
+              />
+            </>
+          )}
+        </div>
+
+        {/* Recent Activity */}
+        <div className="grid gap-6 md:grid-cols-2">
+          <Card className="shadow-lg bg-card/80 backdrop-blur-sm border-border/50">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center text-lg font-semibold">
+                <TrendingUp className="h-5 w-5 mr-3 text-primary" />
+                Recent Trips
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="space-y-4">
+                  {Array(5).fill(0).map((_, i) => (
+                    <div key={i} className="h-16 rounded-lg bg-secondary/50 animate-pulse"></div>
+                  ))}
+                </div>
+              ) : recentTrips.length === 0 ? (
+                <div className="text-center py-12">
+                  <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+                  <p className="text-muted-foreground font-medium">No recent trips found</p>
+                  <p className="text-sm text-muted-foreground/70 mt-1">New trips will appear here</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {recentTrips.map((trip, idx) => (
+                    <div 
+                      key={trip.id} 
+                      className="flex items-center justify-between p-4 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-all duration-200 border border-border/30 animate-fade-in"
+                      style={{ animationDelay: `${idx * 100}ms` }}
+                    >
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-3">
+                          <span className="font-semibold text-sm text-primary">#{trip.id.slice(0, 8)}</span>
+                          <span className={`text-xs font-medium px-2 py-1 rounded-full ${getStatusColor(trip.status)} bg-current/10`}>
+                            {trip.status}
+                          </span>
+                        </div>
+                        <p className="text-sm font-medium text-foreground">{trip.customer} → {trip.destination}</p>
+                        <p className="text-xs text-muted-foreground">Driver: {trip.driver}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-lg bg-card/80 backdrop-blur-sm border-border/50">
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-center text-lg font-semibold">
+                <Truck className="h-5 w-5 mr-3 text-primary" />
+                Fleet Status
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-success/10 to-success/5">
+                  <span className="text-sm font-semibold text-foreground">Active Trucks</span>
+                  <span className="text-2xl font-bold text-success">{loading ? <Loader2 className="inline h-6 w-6 animate-spin" /> : stats.activeTrucks}</span>
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-warning/10 to-warning/5">
+                  <span className="text-sm font-semibold text-foreground">In Maintenance</span>
+                  <span className="text-2xl font-bold text-warning">{loading ? <Loader2 className="inline h-6 w-6 animate-spin" /> : (stats.totalTrucks - stats.activeTrucks)}</span>
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-primary/10 to-primary/5">
+                  <span className="text-sm font-semibold text-foreground">Total Fleet</span>
+                  <span className="text-2xl font-bold text-primary">{loading ? <Loader2 className="inline h-6 w-6 animate-spin" /> : stats.totalTrucks}</span>
+                </div>
+                <div className="pt-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-foreground">Fleet Utilization</span>
+                    <span className="text-sm font-bold text-primary">
+                      {loading || stats.totalTrucks === 0
+                        ? '--'
+                        : `${Math.round((stats.activeTrucks / stats.totalTrucks) * 100)}%`}
+                    </span>
+                  </div>
+                  <div className="w-full bg-secondary/50 rounded-full h-3 overflow-hidden">
+                    <div
+                      className="bg-gradient-primary h-3 rounded-full transition-all duration-1000 ease-out shadow-glow"
+                      style={{ width: loading || stats.totalTrucks === 0 ? '0%' : `${Math.round((stats.activeTrucks / stats.totalTrucks) * 100)}%` }}
+                    ></div>
+                  </div>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
