@@ -1,3 +1,4 @@
+import Chart from "chart.js/auto";
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -45,6 +46,113 @@ interface Trip {
 }
 
 export default function MaintenanceManagement() {
+  const [costPerTruck, setCostPerTruck] = useState<{ truck_id: string; plate_number: string; total_cost: number }[]>([]);
+  const [downloading, setDownloading] = useState(false);
+
+  useEffect(() => {
+    fetchCostPerTruck();
+  }, []); // Only run once on mount
+
+  const fetchCostPerTruck = async () => {
+    const { data, error } = await supabase
+      .from('maintenance')
+      .select('truck_id, cost, trucks:truck_id (plate_number)');
+    if (error || !data) return setCostPerTruck([]);
+    // Aggregate cost per truck
+    const costMap: Record<string, { plate_number: string; total_cost: number }> = {};
+    data.forEach((row: any) => {
+      if (!row.truck_id || !row.trucks) return;
+      if (!costMap[row.truck_id]) {
+        costMap[row.truck_id] = { plate_number: row.trucks.plate_number, total_cost: 0 };
+      }
+      costMap[row.truck_id].total_cost += Number(row.cost);
+    });
+    setCostPerTruck(Object.entries(costMap).map(([truck_id, v]) => ({ truck_id, plate_number: v.plate_number, total_cost: v.total_cost })));
+  };
+
+  // Pie chart data
+  const pieData = costPerTruck.map(truck => ({
+    id: truck.truck_id,
+    label: `${truck.plate_number} ($${truck.total_cost.toFixed(2)})`,
+    value: truck.total_cost
+  }));
+
+  // Pie chart component (using chart.js)
+  const PieChart = () => {
+    // Color palette for legend and chart
+    const colors = [
+      '#3b82f6', '#f59e42', '#10b981', '#ef4444', '#6366f1', '#fbbf24', '#a3e635', '#f472b6', '#38bdf8', '#f87171'
+    ];
+    // Calculate total cost for percentage labels
+    const totalCost = pieData.reduce((sum, d) => sum + d.value, 0);
+    // Chart instance
+    const canvasRef = React.useRef<HTMLCanvasElement>(null);
+    useEffect(() => {
+      if (!canvasRef.current) return;
+      let chartInstance: any = null;
+      chartInstance = new Chart(canvasRef.current, {
+        type: 'pie',
+        data: {
+          labels: pieData.map(d => `${d.label.split(' ')[0]} (${((d.value/totalCost)*100).toFixed(1)}%)`),
+          datasets: [{ data: pieData.map(d => d.value), backgroundColor: colors.slice(0, pieData.length) }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(context: any) {
+                  const label = context.label.split(' ')[0];
+                  const value = context.parsed;
+                  return `${label}: $${value.toFixed(2)}`;
+                }
+              }
+            }
+          }
+        }
+      });
+      return () => {
+        if (chartInstance) chartInstance.destroy();
+      };
+    }, [pieData]);
+
+    // Legend
+    const legend = (
+      <div className="flex flex-wrap justify-center gap-2 mt-4">
+        {pieData.map((d, i) => (
+          <div key={d.id} className="flex items-center space-x-2">
+            <span style={{ background: colors[i], width: 16, height: 16, borderRadius: '50%', display: 'inline-block' }}></span>
+            <span className="text-sm font-medium">{d.label.split(' ')[0]}</span>
+          </div>
+        ))}
+      </div>
+    );
+
+    return (
+      <div className="bg-white rounded-xl shadow p-6 flex flex-col items-center" style={{ width: '100%', maxWidth: 350, margin: '0 auto' }}>
+        <h2 className="text-lg font-bold mb-2">Maintenance Cost Per Truck</h2>
+        <div style={{ width: 250, height: 250, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <canvas ref={canvasRef} width={250} height={250} style={{ width: '100%', height: '100%' }} />
+        </div>
+        {legend}
+      </div>
+    );
+  };
+
+  // PDF download (jsPDF)
+  const handleDownloadPDF = async () => {
+    setDownloading(true);
+    const { default: jsPDF } = await import('jspdf');
+    const doc = new jsPDF();
+    doc.text('Maintenance Cost Per Truck', 10, 10);
+    costPerTruck.forEach((truck, i) => {
+      doc.text(`${truck.plate_number}: $${truck.total_cost.toFixed(2)}`, 10, 20 + i * 10);
+    });
+    doc.save('maintenance-cost-per-truck.pdf');
+    setDownloading(false);
+  };
   const [maintenanceRecords, setMaintenanceRecords] = useState<Maintenance[]>([]);
   const [trucks, setTrucks] = useState<Truck[]>([]);
   const [trips, setTrips] = useState<Trip[]>([]);
@@ -526,93 +634,19 @@ export default function MaintenanceManagement() {
         </CardContent>
       </Card>
 
-      {/* Maintenance Records Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Maintenance Records</CardTitle>
-          <CardDescription>
-            Showing {maintenanceRecords.length} maintenance records
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="flex justify-center items-center h-32">
-              <Loader2 className="h-8 w-8 animate-spin" />
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Truck</TableHead>
-                    <TableHead>Trip</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Cost</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {maintenanceRecords.map((record) => (
-                    <TableRow key={record.id}>
-                      <TableCell>
-                        {format(new Date(record.maintenance_date), 'MMM dd, yyyy')}
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{record.trucks.plate_number}</div>
-                          <div className="text-sm text-muted-foreground">{record.trucks.model}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {record.trips ? (
-                          <Badge variant="outline">
-                            {record.trips.origin} → {record.trips.destination}
-                          </Badge>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="max-w-xs truncate" title={record.description}>
-                          {record.description}
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-medium">${record.cost.toFixed(2)}</TableCell>
-                      <TableCell>
-                        <div className="flex space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEdit(record)}
-                          >
-                            <Edit className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDelete(record.id)}
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {maintenanceRecords.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                        No maintenance records found
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Pie Chart for Maintenance Cost Per Truck */}
+      <div className="w-full flex flex-col items-center">
+        <div className="w-full flex justify-end mb-2">
+          <Button onClick={handleDownloadPDF} disabled={downloading} variant="outline">
+            {downloading ? 'Downloading...' : 'View All (PDF)'}
+          </Button>
+        </div>
+        {costPerTruck.length === 0 ? (
+          <div className="text-muted-foreground">No maintenance cost data available</div>
+        ) : (
+          <PieChart />
+        )}
+      </div>
     </div>
   );
 }
