@@ -99,84 +99,99 @@ export const SettingsTab = () => {
   };
 
   return (
-    <div className="max-w-xl mx-auto space-y-8 p-6">
-      {/* Profile Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Camera className="h-5 w-5" />
-            Profile Photo
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-6">
-            <Avatar className="w-20 h-20">
-              <AvatarImage 
-                src={profile?.avatar_url || ""} 
-                alt={profile?.name || "Profile"} 
-              />
-              <AvatarFallback className="text-lg">
-                {profile?.name?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || "U"}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1">
-              <h3 className="font-semibold">{profile?.name || "User"}</h3>
-              <p className="text-sm text-muted-foreground">{user?.email}</p>
-              <div className="mt-3">
-                <Input 
-                  type="file" 
-                  accept="image/*" 
-                  onChange={handleAvatarUpload}
-                  disabled={uploading}
-                  className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
-                />
-                {uploading && <p className="text-sm text-muted-foreground mt-1">Uploading...</p>}
+    <div className="max-w-2xl mx-auto p-6">
+      <h1 className="text-3xl font-bold mb-8 text-center">Settings</h1>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* Profile Section */}
+        <Card className="bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-md">
+          <CardHeader className="bg-gray-50 rounded-t-xl border-b border-gray-100">
+            <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+              <Camera className="h-5 w-5 text-primary" />
+              Profile Photo
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col items-center gap-4 py-4">
+              <div className="relative group">
+                <Avatar className="w-28 h-28 border-4 border-primary/30 rounded-full shadow-lg group-hover:border-primary transition-all duration-200">
+                  <AvatarImage 
+                    src={profile?.avatar_url || ""} 
+                    alt={profile?.name || "Profile"} 
+                  />
+                  <AvatarFallback className="text-2xl">
+                    {profile?.name?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || "U"}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="absolute bottom-0 right-0 bg-primary text-white rounded-full p-2 shadow-md group-hover:scale-110 transition-transform duration-200">
+                  <Camera className="h-5 w-5" />
+                </div>
+              </div>
+              <h3 className="font-semibold text-lg mt-2">{profile?.name || "User"}</h3>
+              <p className="text-sm text-muted-foreground mb-2">{user?.email}</p>
+              <div className="mt-3 w-full">
+                <Label className="mb-2 block text-center font-medium text-primary">Change Photo</Label>
+                <div className="relative w-full flex justify-center">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarUpload}
+                    disabled={uploading}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                    style={{ border: 'none', outline: 'none' }}
+                  />
+                  <Button type="button" className="w-40" disabled={uploading}>
+                    {uploading ? 'Uploading...' : 'Choose Photo'}
+                  </Button>
+                </div>
+                {uploading && <p className="text-sm text-muted-foreground mt-2 text-center">Uploading...</p>}
               </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      {/* Password Reset Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Key className="h-5 w-5" />
-            Change Password
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground mb-4">
-            We'll send you an email with instructions to reset your password.
-          </p>
-          <Button 
-            onClick={handlePasswordReset} 
-            disabled={sendingReset}
-            className="w-full"
-          >
-            {sendingReset ? "Sending..." : "Send Reset Email"}
-          </Button>
-        </CardContent>
-      </Card>
+        <div className="flex flex-col gap-8">
+          {/* Password Reset Section */}
+          <Card className="rounded-xl shadow-md">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Key className="h-5 w-5" />
+                Change Password
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-4">
+                We'll send you an email with instructions to reset your password.
+              </p>
+              <Button 
+                onClick={handlePasswordReset} 
+                disabled={sendingReset}
+                className="w-full"
+              >
+                {sendingReset ? "Sending..." : "Send Reset Email"}
+              </Button>
+            </CardContent>
+          </Card>
 
-      {/* Logout Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <LogOut className="h-5 w-5" />
-            Account
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Button 
-            onClick={handleLogout} 
-            variant="destructive" 
-            className="w-full"
-          >
-            Logout
-          </Button>
-        </CardContent>
-      </Card>
+          {/* Logout Section */}
+          <Card className="rounded-xl shadow-md">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <LogOut className="h-5 w-5" />
+                Account
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Button 
+                onClick={handleLogout} 
+                variant="destructive" 
+                className="w-full"
+              >
+                Logout
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 };
