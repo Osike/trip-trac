@@ -158,16 +158,17 @@ export const Navigation = ({ currentPage, onPageChange, onLogout, userProfile }:
                   key={id}
                   variant={currentPage === id ? "default" : "ghost"}
                   className={cn(
-                    "w-full justify-start flex items-center space-x-3 text-base py-2 rounded-lg",
+                    "w-full justify-start flex items-center space-x-4 text-lg py-4 rounded-xl",
                     currentPage === id && "bg-gradient-primary text-primary-foreground shadow"
                   )}
+                  style={{ minHeight: 40 }}
                   onClick={() => {
                     onPageChange(id);
                     setIsMobileMenuOpen(false);
                   }}
                 >
-                  <Icon className="h-4 w-4" />
-                  <span className="font-semibold">{label}</span>
+                  <Icon className="h-8 w-8" />
+                  <span className="font-bold text-lg">{label}</span>
                 </Button>
               ))}
               {/* Maintenance Dropdown for mobile (collapsible) */}
