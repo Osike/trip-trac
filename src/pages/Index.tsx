@@ -192,7 +192,7 @@ const Index = () => {
       case "maintenance-reports":
         return <MaintenanceReports />;
       case "settings":
-        return <SettingsTab userProfile={profile} />;
+        return <SettingsTab />;
       default:
         return <DashboardOverview />;
     }
