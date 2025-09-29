@@ -83,6 +83,7 @@ export const TripsManagement = () => {
     fuel: "",
     mileage: "",
     road_tolls: "",
+    salary: "",
     comments: "",
     photo: null,
   });
@@ -352,6 +353,7 @@ export const TripsManagement = () => {
         distance: form.distance ? Number(form.distance) : null,
         duration: form.duration ? Number(form.duration) : null,
         RATE: form.rate ? Number(form.rate) : null,
+        "SALARY": form.salary ? Number(form.salary) : null,
         FUEL: form.fuel ? Number(form.fuel) : null,
         MILEAGE: form.mileage ? Number(form.mileage) : null,
         "ROAD TOLLS": form.road_tolls ? Number(form.road_tolls) : null,
@@ -370,8 +372,28 @@ export const TripsManagement = () => {
         return;
       }
 
-      // Handle maintenance items if needed
-      // This would require a separate table in the database
+        // Handle maintenance items if needed
+        // Insert maintenance items into 'maintenance' table
+        if (newTrip && newTrip.length > 0) {
+          const tripId = newTrip[0].id;
+          const validMaintenanceRows = maintenanceRows.filter(row => row.item && row.cost);
+          if (validMaintenanceRows.length > 0) {
+            const maintenancePayload = validMaintenanceRows.map(row => ({
+              trip_id: tripId,
+              truck_id: form.truck_id,
+              description: row.item,
+              cost: Number(row.cost)
+              // maintenance_date, created_at, updated_at will use defaults
+            }));
+            const { error: maintenanceError } = await supabase
+              .from('maintenance')
+              .insert(maintenancePayload);
+            if (maintenanceError) {
+              console.error('Maintenance insert error:', maintenanceError);
+              // Optionally show a toast or error message
+            }
+          }
+        }
       
       // Handle photo upload if provided
       if (form.photo && newTrip && newTrip.length > 0) {
@@ -403,6 +425,7 @@ export const TripsManagement = () => {
         fuel: "",
         mileage: "",
         road_tolls: "",
+        salary: "",
         comments: "",
         photo: null,
       });
@@ -524,6 +547,7 @@ export const TripsManagement = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input name="mileage" placeholder="Mileage" value={form.mileage} onChange={handleFormChange} />
                 <Input name="rate" placeholder="Rate ($)" value={form.rate} onChange={handleFormChange} />
+                <Input name="salary" placeholder="Driver Salary ($)" value={form.salary} onChange={handleFormChange} />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input name="fuel" placeholder="Fuel Cost ($)" value={form.fuel} onChange={handleFormChange} />
