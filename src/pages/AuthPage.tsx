@@ -15,7 +15,6 @@ const AuthPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
-  const [role, setRole] = useState("driver");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -47,7 +46,7 @@ const AuthPage = () => {
           emailRedirectTo: redirectUrl,
           data: {
             name,
-            role
+            role: "admin"
           }
         }
       });
@@ -138,21 +137,6 @@ const AuthPage = () => {
                       required
                     />
                   </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="role">Role</Label>
-                  <select
-                    id="role"
-                    value={role}
-                    onChange={(e) => setRole(e.target.value)}
-                    className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                    required
-                  >
-                    <option value="driver">Driver</option>
-                    <option value="dispatcher">Dispatcher</option>
-                    <option value="admin">Admin</option>
-                  </select>
                 </div>
               </>
             )}
