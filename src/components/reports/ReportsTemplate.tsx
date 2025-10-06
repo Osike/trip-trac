@@ -188,129 +188,146 @@ export const ReportsTemplate: React.FC<ReportsTemplateProps> = ({
 
   // Export to PDF
   const exportToPDF = async () => {
-    if (reportData.length === 0) {
+    if (!filteredData || filteredData.length === 0) {
       toast.warning("No data to export. Generate a report first.");
       return;
     }
 
     setIsExporting(true);
     try {
-      // Create a new PDF document
-      const doc = new jsPDF({
-        orientation: displayColumns.length > 6 ? 'landscape' : 'portrait',
-        unit: 'mm',
-        format: 'a4'
-      });
-      
-      // Set document properties
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
       doc.setProperties({
-        title: `${title} - ${new Date().toLocaleDateString()}`,
-        subject: `${title} Report`,
+        title: `Champions Logistics Report - ${new Date().toLocaleDateString()}`,
+        subject: 'Vehicle Maintenance Report',
         author: 'Champions Ltd',
         creator: 'Champions Logistics System'
       });
 
-      // Add company header
-      doc.setFontSize(20);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Champions Ltd', 20, 20);
-      
-      doc.setFontSize(12);
-      doc.setFont('helvetica', 'normal');
-      doc.text('Logistics & Transportation Services', 20, 28);
-      
-      // Add report title
-      doc.setFontSize(16);
-      doc.setFont('helvetica', 'bold');
-      doc.text(title, 20, 45);
-      
-      // Add generation date and filters info
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'normal');
-      const generatedDate = `Generated on: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`;
-      doc.text(generatedDate, 20, 55);
-      
-      // Add date range if specified
-      if (dateRange.from || dateRange.to) {
-        const fromDate = dateRange.from ? dateRange.from.toLocaleDateString() : 'N/A';
-        const toDate = dateRange.to ? dateRange.to.toLocaleDateString() : 'N/A';
-        doc.text(`Date Range: ${fromDate} to ${toDate}`, 20, 62);
-      }
-      
-      // Add active filters
-      const activeFilters = Object.entries(filters).filter(([key, value]) => value && value !== '');
-      if (activeFilters.length > 0) {
-        const filterText = activeFilters.map(([key, value]) => `${key}: ${value}`).join(', ');
-        doc.text(`Filters: ${filterText}`, 20, 69);
-      }
-      
-      // Add summary
-      doc.text(`Total Records: ${filteredData.length}`, 20, 76);
-      
-      // Prepare table data
-      const tableHeaders = displayColumns.map(col => col.label);
-      const tableData = filteredData.map(item => 
-        displayColumns.map(col => {
-          const value = item[col.key];
-          // Handle long text by truncating if necessary
-          if (typeof value === 'string' && value.length > 30) {
-            return value.substring(0, 27) + '...';
+      filteredData.forEach((data, idx) => {
+        if (idx > 0) doc.addPage();
+        // Default values fallback, use live maintenance array
+        // Use actual values from trips table for route details
+        data = {
+          date: data.date || new Date().toISOString().split('T')[0],
+          vehicleNo: data.truck || 'N/A',
+          driver: data.driver || 'N/A',
+          from: typeof data.origin === 'string' ? data.origin : 'N/A',
+          to: typeof data.destination === 'string' ? data.destination : 'N/A',
+          tripDate: data.scheduled_date || data.tripDate || 'N/A',
+          maintenanceItems: Array.isArray(data.maintenance) ? data.maintenance.map(m => ({ item: `Maintenance #${m.trip_id}`, cost: m.cost })) : [],
+          roadToll: data.road_tolls || data.roadToll || 0,
+          mileage: data.mileage || 0,
+          drcToll: data.drc_toll || data.drcToll || 0,
+          salary: data.salary || 0,
+          fuel: data.fuel || 0,
+          rate: data.rate || data.RATE || 0
+        };
+
+        // Header
+        doc.setFillColor(41, 128, 185);
+        doc.rect(0, 0, 210, 30, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(22);
+        doc.setFont('helvetica', 'bold');
+        doc.text('CHAMPIONS LOGISTICS', 12, 15);
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Vehicle Trips Report', 12, 23);
+        doc.setFontSize(10);
+        doc.text('REPORT DATE', 170, 10);
+        doc.setFontSize(16);
+        doc.text(data.date ? new Date(data.date).toLocaleDateString() : 'N/A', 170, 18);
+
+        // Vehicle Information & Trip Details
+        doc.setTextColor(41, 128, 185);
+        doc.setFontSize(12);
+        doc.text('VEHICLE INFORMATION', 12, 38);
+        doc.text('TRIP DETAILS', 110, 38);
+        doc.setTextColor(60, 60, 60);
+        doc.setFontSize(10);
+        doc.text('VEHICLE NO:', 12, 45);
+        doc.text(String(data.vehicleNo), 40, 45);
+        doc.text('DRIVER:', 12, 52);
+        doc.text(String(data.driver), 40, 52);
+        doc.text('ROUTE:', 110, 45);
+        doc.text(`${data.from} → ${data.to}`, 135, 45);
+        doc.text('TRIP DATE:', 110, 52);
+        doc.text(data.tripDate ? new Date(data.tripDate).toLocaleDateString() : 'N/A', 135, 52);
+
+        // Maintenance Items Table
+        doc.setFontSize(12);
+        doc.setTextColor(41, 128, 185);
+        doc.text('MAINTENANCE', 12, 62);
+        doc.setTextColor(60, 60, 60);
+        let finalY = 65;
+        autoTable(doc, {
+          head: [['ITEM', 'COST']],
+          body: (data.maintenanceItems || []).map((item) => [item.item, `$${item.cost?.toFixed(2) || '0.00'}`]),
+          startY: finalY,
+          theme: 'grid',
+          headStyles: { fillColor: [220, 230, 240], textColor: [41, 128, 185], fontStyle: 'bold' },
+          bodyStyles: { textColor: [60, 60, 60] },
+          columnStyles: { 1: { halign: 'right' } },
+          styles: { fontSize: 9, cellPadding: 2 },
+          didDrawPage: function (tableData) {
+            finalY = tableData.cursor.y;
           }
-          return String(value || 'N/A');
-        })
-      );
-      
-      // Add table using autoTable
-      autoTable(doc, {
-        head: [tableHeaders],
-        body: tableData,
-        startY: 85,
-        styles: {
-          fontSize: 8,
-          cellPadding: 3,
-          overflow: 'linebreak',
-          halign: 'left'
-        },
-        headStyles: {
-          fillColor: [41, 128, 185], // Blue header
-          textColor: [255, 255, 255],
-          fontSize: 9,
-          fontStyle: 'bold'
-        },
-        alternateRowStyles: {
-          fillColor: [245, 245, 245] // Light gray for alternate rows
-        },
-        columnStyles: {
-          // Adjust column widths based on content
-          0: { cellWidth: 'auto' },
-        },
-        margin: { top: 10, right: 20, bottom: 20, left: 20 },
-        didDrawPage: function (data) {
-          // Add page numbers
-          const pageCount = doc.getNumberOfPages();
-          const currentPage = doc.getCurrentPageInfo().pageNumber;
-          
-          // Footer with page number
-          doc.setFontSize(8);
-          doc.setFont('helvetica', 'normal');
-          const pageText = `Page ${currentPage} of ${pageCount}`;
-          const pageWidth = doc.internal.pageSize.getWidth();
-          doc.text(pageText, pageWidth - 30, doc.internal.pageSize.getHeight() - 10);
-          
-          // Company footer
-          doc.text('Champions Ltd - Your Trusted Logistics Partner', pageWidth / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
-        }
+        });
+        // Calculate maintenance total
+        const itemsTotal = (data.maintenanceItems || []).reduce((sum, item) => sum + (item.cost || 0), 0);
+        doc.setFontSize(10);
+        doc.setTextColor(41, 128, 185);
+        doc.text(`TOTAL: $${itemsTotal.toFixed(2)}`, 160, finalY + 6);
+
+        // Cost Breakdown
+        doc.setFontSize(12);
+        doc.setTextColor(41, 128, 185);
+        doc.text('COST BREAKDOWN', 12, finalY + 16);
+        doc.setFontSize(10);
+        doc.setTextColor(60, 60, 60);
+        const breakdownY = finalY + 22;
+        const breakdown = [
+          ['Road Toll', data.roadToll],
+          ['DRC Toll', data.drcToll],
+          ['Mileage', data.mileage],
+          ['Salary', data.salary],
+          ['Fuel', data.fuel],
+          ['Maintenance', itemsTotal]
+        ];
+        breakdown.forEach(([label, value], i) => {
+          doc.text(`${label}:`, 12 + (i % 2 === 0 ? 0 : 60), breakdownY + Math.floor(i / 2) * 8);
+          doc.text(`$${Number(value).toFixed(2)}`, 40 + (i % 2 === 0 ? 0 : 60), breakdownY + Math.floor(i / 2) * 8);
+        });
+
+        // Total Summary
+        const summaryY = breakdownY + 28;
+        doc.setFillColor(41, 128, 185);
+        doc.rect(12, summaryY, 186, 28, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(14);
+        doc.text('RATE:', 20, summaryY + 10);
+        doc.text(`$${Number(data.rate).toFixed(2)}`, 60, summaryY + 10);
+        const totalCost = itemsTotal + Number(data.roadToll) + Number(data.mileage) + Number(data.drcToll) + Number(data.salary) + Number(data.fuel);
+        doc.text('TOTAL COST:', 20, summaryY + 20);
+        doc.text(`$${totalCost.toFixed(2)}`, 60, summaryY + 20);
+        doc.text('BALANCE:', 120, summaryY + 15);
+        const balance = Number(data.rate) - totalCost;
+        doc.text(`$${balance.toFixed(2)}`, 160, summaryY + 15);
+
+        // Footer
+        doc.setFontSize(9);
+        doc.setTextColor(120, 120, 120);
+        doc.text('Champions Logistics - Professional Transportation Services', 12, 285);
+        doc.text('This is an automatically generated report', 12, 290);
       });
-      
-      // Save the PDF with a descriptive filename
+
+      // Save the PDF
       const timestamp = new Date().toISOString().split('T')[0];
-      const filename = `${title.replace(/\s+/g, '_')}_Report_${timestamp}.pdf`;
-      doc.save(filename);
-      
-      toast.success("PDF report exported successfully");
+      doc.save(`ChampionsLogistics_Report_${timestamp}.pdf`);
+      toast.success('PDF report exported successfully');
     } catch (error) {
-      toast.error("Failed to export PDF report");
-      console.error("Error:", error);
+      toast.error('Failed to export PDF report');
+      console.error('Error:', error);
     } finally {
       setIsExporting(false);
     }

@@ -1,4 +1,9 @@
 import React, { useState, useEffect } from "react";
+// PDF generation dependencies
+// @ts-ignore
+import jsPDF from 'jspdf';
+// @ts-ignore
+import autoTable from 'jspdf-autotable';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -68,6 +73,144 @@ interface Truck {
 }
 
 export const TripsManagement = () => {
+  // PDF export handler
+  const handleExportPDF = async () => {
+    // Fetch all trucks
+    const { data: trucks, error: trucksError } = await supabase
+      .from('trucks')
+      .select('id, plate_number, model');
+    if (trucksError || !trucks) {
+      toast.error('Failed to fetch trucks');
+      return;
+    }
+
+    // For each truck, fetch trips and maintenance
+  const pdf = new jsPDF({ orientation: 'landscape' });
+    let y = 10;
+    for (const truck of trucks) {
+      // ...existing code for truck heading, trips, maintenance...
+      // After trips and maintenance are fetched, render profit section
+      // Removed orphaned block. No action needed here.
+  // Truck heading (large, bold)
+  pdf.setFontSize(18);
+  pdf.setFont(undefined, 'bold');
+  pdf.text(`${truck.plate_number}`, 10, y);
+  pdf.setFontSize(12);
+  pdf.setFont(undefined, 'normal');
+  pdf.text(`Model: ${truck.model}`, 10, y + 7);
+  y += 16;
+
+      // Fetch trips for this truck
+      const { data: trips, error: tripsError } = await supabase
+        .from('trips')
+        .select('id, origin, destination, scheduled_date, status, distance, "RATE", "MILEAGE", "FUEL", "SALARY", "ROAD TOLLS"')
+        .eq('truck_id', truck.id);
+
+      // Fetch maintenance for all trips of this truck
+      let maintenanceByTrip: Record<string, number> = {};
+      if (trips && trips.length > 0) {
+        const tripIds = trips.map(t => t.id);
+        const { data: maintData, error: maintError } = await supabase
+          .from('maintenance')
+          .select('trip_id, cost')
+          .in('trip_id', tripIds);
+        if (!maintError && maintData) {
+          maintData.forEach((m: any) => {
+            if (!maintenanceByTrip[m.trip_id]) maintenanceByTrip[m.trip_id] = 0;
+            maintenanceByTrip[m.trip_id] += Number(m.cost) || 0;
+          });
+        }
+      }
+      if (tripsError) {
+        pdf.setFontSize(10);
+        pdf.text('Error fetching trips', 10, y);
+        y += 6;
+      } else if (trips && trips.length > 0) {
+        // Trip summary table (includes profit column, no duplicate profit table)
+        autoTable(pdf, {
+          startY: y,
+          head: [['Origin', 'Destination', 'Date', 'Status', 'Rate', 'Fuel', 'Mileage', 'Salary', 'Road Tolls', 'Total Maintenance', 'Profit']],
+          body: trips.map(trip => {
+            const rate = Number(trip["RATE"] ?? 0);
+            const fuel = Number(trip["FUEL"] ?? 0);
+            const mileage = Number(trip["MILEAGE"] ?? 0);
+            const salary = Number(trip["SALARY"] ?? 0);
+            const roadTolls = Number(trip["ROAD TOLLS"] ?? 0);
+            const maint = Number(maintenanceByTrip[trip.id] ?? 0);
+            const totalCosts = fuel + mileage + salary + maint + roadTolls;
+            const profit = rate - totalCosts;
+            return [
+              trip.origin,
+              trip.destination,
+              trip.scheduled_date,
+              trip.status,
+              rate.toFixed(2),
+              fuel.toFixed(2),
+              mileage.toFixed(2),
+              salary.toFixed(2),
+              roadTolls.toFixed(2),
+              maint.toFixed(2),
+              profit.toFixed(2)
+            ];
+          }),
+          theme: 'grid',
+          styles: { fontSize: 9 },
+        });
+        // @ts-ignore
+        y = (pdf as any).lastAutoTable.finalY + 8;
+      } else {
+        pdf.setFontSize(10);
+        pdf.text('No trips found.', 10, y);
+        y += 6;
+      }
+
+      // Fetch maintenance for this truck
+  // Add Maintenance section heading
+  pdf.setFontSize(14);
+  pdf.setFont(undefined, 'bold');
+  pdf.text('Maintenance', 10, y);
+  pdf.setFontSize(10);
+  pdf.setFont(undefined, 'normal');
+  y += 7;
+      const { data: maintenance, error: maintenanceError } = await supabase
+        .from('maintenance')
+        .select('id, description, cost, maintenance_date, trip_id')
+        .eq('truck_id', truck.id);
+      if (maintenanceError) {
+        pdf.setFontSize(10);
+        pdf.text('Error fetching maintenance', 10, y);
+        y += 6;
+      } else if (maintenance && maintenance.length > 0) {
+        autoTable(pdf, {
+          startY: y,
+          head: [['Description', 'Cost', 'Date', 'Trip']],
+          body: maintenance.map(m => [
+            m.description,
+            m.cost,
+            m.maintenance_date,
+            m.trip_id ?? ''
+          ]),
+          theme: 'grid',
+          styles: { fontSize: 9 },
+        });
+        // @ts-ignore
+        y = (pdf as any).lastAutoTable.finalY + 8;
+      } else {
+        pdf.setFontSize(10);
+        pdf.text('No maintenance records found.', 10, y);
+        y += 8;
+      }
+
+      // Add page if space is low
+      if (y > 260) {
+        pdf.addPage();
+        y = 10;
+      } else {
+        y += 8;
+      }
+    }
+    pdf.save('trucks_report.pdf');
+  };
   const [searchTerm, setSearchTerm] = useState("");
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
@@ -112,16 +255,15 @@ export const TripsManagement = () => {
     fetchTrucks();
   }, []);
 
-  // Debounce search
+  // Debounce search and fetch trips
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      if (searchTerm) {
-        searchTrips(searchTerm);
+      if (searchTerm.trim().length > 0) {
+        searchTrips(searchTerm.trim());
       } else {
         fetchTrips();
       }
-    }, 500);
-    
+    }, 400);
     return () => clearTimeout(timeoutId);
   }, [searchTerm]);
 
@@ -243,6 +385,7 @@ export const TripsManagement = () => {
   const searchTrips = async (term: string) => {
     setIsSearching(true);
     try {
+      // Only filter top-level columns in Supabase
       const { data, error } = await supabase
         .from('trips')
         .select(`
@@ -253,9 +396,7 @@ export const TripsManagement = () => {
         `)
         .or(`
           origin.ilike.%${term}%,
-          destination.ilike.%${term}%,
-          customers.name.ilike.%${term}%,
-          profiles.name.ilike.%${term}%
+          destination.ilike.%${term}%
         `)
         .order('scheduled_date', { ascending: false });
 
@@ -265,8 +406,21 @@ export const TripsManagement = () => {
         return;
       }
 
+      // Now filter joined columns in JS
+      const lowerTerm = term.toLowerCase();
+      const filteredTrips = (data as any[]).filter(trip => {
+        return (
+          (trip.customers?.name?.toLowerCase().includes(lowerTerm) || false) ||
+          (trip.profiles?.name?.toLowerCase().includes(lowerTerm) || false) ||
+          (trip.trucks?.plate_number?.toLowerCase().includes(lowerTerm) || false) ||
+          (trip.scheduled_date && new Date(trip.scheduled_date).toLocaleDateString().toLowerCase().includes(lowerTerm)) ||
+          (trip.origin?.toLowerCase().includes(lowerTerm) || false) ||
+          (trip.destination?.toLowerCase().includes(lowerTerm) || false)
+        );
+      });
+
       // Transform data for display
-      const formattedTrips = (data as any[]).map(trip => ({
+      const formattedTrips = filteredTrips.map(trip => ({
         id: trip.id,
         customer: trip.customers?.name || 'Unknown Customer',
         origin: trip.origin,
@@ -719,6 +873,11 @@ export const TripsManagement = () => {
         onOpenChange={setTripEditOpen}
         onTripUpdated={handleTripUpdated}
       />
+
+      {/* Export PDF Button */}
+      <div style={{ margin: '16px 0' }}>
+        <Button onClick={handleExportPDF} variant="outline">Export Trucks PDF Report</Button>
+      </div>
     </div>
   );
 };
