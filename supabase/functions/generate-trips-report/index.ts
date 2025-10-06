@@ -81,7 +81,7 @@ serve(async (req) => {
     if (tripIds.length > 0) {
       const { data: maintenance, error: maintenanceError } = await supabaseClient
         .from('maintenance')
-        .select('trip_id, cost')
+        .select('trip_id, cost, description')
         .in('trip_id', tripIds);
       
       if (!maintenanceError) {
