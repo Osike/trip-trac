@@ -216,7 +216,7 @@ export const ReportsTemplate: React.FC<ReportsTemplateProps> = ({
           from: typeof data.origin === 'string' ? data.origin : 'N/A',
           to: typeof data.destination === 'string' ? data.destination : 'N/A',
           tripDate: data.scheduled_date || data.tripDate || 'N/A',
-          maintenanceItems: Array.isArray(data.maintenance) ? data.maintenance.map(m => ({ item: `Maintenance #${m.trip_id}`, cost: m.cost })) : [],
+          maintenanceItems: Array.isArray(data.maintenance) ? data.maintenance.map(m => ({ item: m.description || 'Maintenance', cost: m.cost })) : [],
           roadToll: data.road_tolls || data.roadToll || 0,
           mileage: data.mileage || 0,
           drcToll: data.drc_toll || data.drcToll || 0,

@@ -2,7 +2,7 @@ import React from "react";
 import { ReportsTemplate } from "./ReportsTemplate";
 
 export const TripsReport = () => {
-  // Define columns for trips report
+  // Define columns for trips report - matching database schema
   const columns = [
     { key: "id", label: "Trip ID" },
     { key: "customer", label: "Customer" },
@@ -12,9 +12,10 @@ export const TripsReport = () => {
     { key: "truck", label: "Truck" },
     { key: "scheduled_date", label: "Scheduled Date" },
     { key: "status", label: "Status" },
-    { key: "distance", label: "Distance (kilometers)" },
+    { key: "distance", label: "Distance" },
+    { key: "duration", label: "Duration" },
     { key: "rate", label: "Rate ($)" },
-    { key: "duration", label: "Duration (days)" }
+    { key: "profit", label: "Profit ($)" }
   ];
 
   // Define filter options

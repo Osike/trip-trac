@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Truck, Mail, Lock, User, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
 
 const AuthPage = () => {
@@ -15,9 +16,10 @@ const AuthPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
-  const [role, setRole] = useState("driver");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showOtpInput, setShowOtpInput] = useState(false);
+  const [otp, setOtp] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -38,16 +40,14 @@ const AuthPage = () => {
     setError("");
 
     try {
-      const redirectUrl = `${window.location.origin}/`;
-      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: redirectUrl,
+          emailRedirectTo: `${window.location.origin}/`,
           data: {
             name,
-            role
+            role: "admin"
           }
         }
       });
@@ -58,8 +58,36 @@ const AuthPage = () => {
       }
 
       if (data.user) {
-        toast.success("Account created successfully! Please check your email to verify your account.");
-        setIsLogin(true);
+        toast.success("Verification code sent! Please check your email.");
+        setShowOtpInput(true);
+      }
+    } catch (err) {
+      setError("An unexpected error occurred");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      const { data, error } = await supabase.auth.verifyOtp({
+        email,
+        token: otp,
+        type: 'signup'
+      });
+
+      if (error) {
+        setError(error.message);
+        return;
+      }
+
+      if (data.user) {
+        toast.success("Email verified successfully! Welcome!");
+        navigate("/");
       }
     } catch (err) {
       setError("An unexpected error occurred");
@@ -110,7 +138,7 @@ const AuthPage = () => {
             <span className="text-2xl font-bold text-foreground">TripTrac</span>
           </div>
           <CardTitle className="text-xl">
-            {isLogin ? "Welcome Back" : "Create Account"}
+            {showOtpInput ? "Verify Your Email" : (isLogin ? "Welcome Back" : "Create Account")}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -121,19 +149,85 @@ const AuthPage = () => {
             </Alert>
           )}
 
-          <form onSubmit={isLogin ? handleSignIn : handleSignUp} className="space-y-4">
-            {!isLogin && (
-              <>
+          {showOtpInput ? (
+            <form onSubmit={handleVerifyOtp} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="otp">Enter Verification Code</Label>
+                <p className="text-sm text-muted-foreground">
+                  We sent a 6-digit code to {email}
+                </p>
+                <div className="flex justify-center">
+                  <InputOTP
+                    maxLength={6}
+                    value={otp}
+                    onChange={(value) => setOtp(value)}
+                  >
+                    <InputOTPGroup>
+                      <InputOTPSlot index={0} />
+                      <InputOTPSlot index={1} />
+                      <InputOTPSlot index={2} />
+                      <InputOTPSlot index={3} />
+                      <InputOTPSlot index={4} />
+                      <InputOTPSlot index={5} />
+                    </InputOTPGroup>
+                  </InputOTP>
+                </div>
+              </div>
+
+              <Button 
+                type="submit" 
+                className="w-full bg-gradient-primary hover:bg-gradient-primary/90 shadow-glow"
+                disabled={loading || otp.length !== 6}
+              >
+                {loading ? "Verifying..." : "Verify Email"}
+              </Button>
+
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  setShowOtpInput(false);
+                  setOtp("");
+                  setError("");
+                }}
+                className="w-full text-muted-foreground hover:text-foreground"
+              >
+                Back to sign up
+              </Button>
+            </form>
+          ) : (
+            <>
+              <form onSubmit={isLogin ? handleSignIn : handleSignUp} className="space-y-4">
+                {!isLogin && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="name">Full Name</Label>
+                      <div className="relative">
+                        <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="name"
+                          type="text"
+                          placeholder="Enter your full name"
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          className="pl-10"
+                          required
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+
                 <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
+                  <Label htmlFor="email">Email</Label>
                   <div className="relative">
-                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                      id="name"
-                      type="text"
-                      placeholder="Enter your full name"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
+                      id="email"
+                      type="email"
+                      placeholder="Enter your email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
                       className="pl-10"
                       required
                     />
@@ -141,79 +235,48 @@ const AuthPage = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="role">Role</Label>
-                  <select
-                    id="role"
-                    value={role}
-                    onChange={(e) => setRole(e.target.value)}
-                    className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                    required
-                  >
-                    <option value="driver">Driver</option>
-                    <option value="dispatcher">Dispatcher</option>
-                    <option value="admin">Admin</option>
-                  </select>
+                  <Label htmlFor="password">Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="Enter your password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="pl-10"
+                      required
+                      minLength={6}
+                    />
+                  </div>
                 </div>
-              </>
-            )}
 
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10"
-                  required
-                />
+                <Button 
+                  type="submit" 
+                  className="w-full bg-gradient-primary hover:bg-gradient-primary/90 shadow-glow"
+                  disabled={loading}
+                >
+                  {loading ? "Please wait..." : (isLogin ? "Sign In" : "Create Account")}
+                </Button>
+              </form>
+
+              <div className="text-center space-y-2">
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setIsLogin(!isLogin);
+                    setError("");
+                  }}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  {isLogin 
+                    ? "Don't have an account? Sign up" 
+                    : "Already have an account? Sign in"
+                  }
+                </Button>
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10"
-                  required
-                  minLength={6}
-                />
-              </div>
-            </div>
-
-            <Button 
-              type="submit" 
-              className="w-full bg-gradient-primary hover:bg-gradient-primary/90 shadow-glow"
-              disabled={loading}
-            >
-              {loading ? "Please wait..." : (isLogin ? "Sign In" : "Create Account")}
-            </Button>
-          </form>
-
-          <div className="text-center space-y-2">
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setIsLogin(!isLogin);
-                setError("");
-              }}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              {isLogin 
-                ? "Don't have an account? Sign up" 
-                : "Already have an account? Sign in"
-              }
-            </Button>
-          </div>
+            </>
+          )}
         </CardContent>
       </Card>
     </div>

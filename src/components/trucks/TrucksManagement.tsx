@@ -222,13 +222,40 @@ export const TrucksManagement = () => {
             </DialogHeader>
             <div className="overflow-y-auto flex-grow pr-1 -mr-1 pb-4">
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Input name="plate_number" placeholder="Plate Number" value={form.plate_number} onChange={handleFormChange} required />
-                  <Input name="model" placeholder="Model" value={form.model} onChange={handleFormChange} required />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Input name="capacity" placeholder="Capacity (tons)" value={form.capacity} onChange={handleFormChange} required />
+                <div className="space-y-4">
                   <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Plate Number *</label>
+                    <Input 
+                      name="plate_number" 
+                      placeholder="e.g., ABC-1234" 
+                      value={form.plate_number} 
+                      onChange={handleFormChange} 
+                      required 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Truck Model *</label>
+                    <Input 
+                      name="model" 
+                      placeholder="e.g., Volvo FH16" 
+                      value={form.model} 
+                      onChange={handleFormChange} 
+                      required 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Capacity (tons) *</label>
+                    <Input 
+                      name="capacity" 
+                      type="number"
+                      placeholder="e.g., 20" 
+                      value={form.capacity} 
+                      onChange={handleFormChange} 
+                      required 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Status *</label>
                     <Select value={form.status} onValueChange={handleStatusChange} required>
                       <SelectTrigger>
                         <SelectValue placeholder="Select status" />
@@ -240,15 +267,37 @@ export const TrucksManagement = () => {
                       </SelectContent>
                     </Select>
                   </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Assigned Driver ID (Optional)</label>
+                    <Input 
+                      name="assigned_driver_id" 
+                      placeholder="Driver ID" 
+                      value={form.assigned_driver_id} 
+                      onChange={handleFormChange} 
+                    />
+                    <p className="text-xs text-muted-foreground">Leave empty if no driver assigned</p>
+                  </div>
                 </div>
-                <Input name="assigned_driver_id" placeholder="Assigned Driver ID (optional)" value={form.assigned_driver_id} onChange={handleFormChange} />
                 
-                {error && <div className="text-red-600">{error}</div>}
-                <div className="flex gap-2 justify-end sticky bottom-0 pt-2 bg-background">
-                  <Button type="submit" disabled={loading}>{loading ? "Saving..." : "Save Truck"}</Button>
+                {error && (
+                  <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-sm">
+                    {error}
+                  </div>
+                )}
+                <div className="flex gap-3 justify-end sticky bottom-0 pt-4 bg-background border-t">
                   <DialogClose asChild>
-                    <Button type="button" variant="outline">Cancel</Button>
+                    <Button type="button" variant="outline" disabled={loading}>Cancel</Button>
                   </DialogClose>
+                  <Button type="submit" disabled={loading} className="min-w-[120px]">
+                    {loading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      "Add Truck"
+                    )}
+                  </Button>
                 </div>
               </form>
             </div>
