@@ -44,6 +44,7 @@ const AuthPage = () => {
         email,
         password,
         options: {
+          emailRedirectTo: `${window.location.origin}/`,
           data: {
             name,
             role: "admin"
