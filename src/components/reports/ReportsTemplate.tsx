@@ -153,8 +153,10 @@ export const ReportsTemplate: React.FC<ReportsTemplateProps> = ({
           { key: 'status', label: 'Status' },
           { key: 'scheduled_date', label: 'Scheduled Date' },
           { key: 'rate', label: 'Rate' },
+          //planning to remove these section 
           { key: 'distance', label: 'Distance' },
           { key: 'duration', label: 'Duration' },
+          //to here 
           { key: 'truck', label: 'Truck' },
           { key: 'driver', label: 'Driver' },
           { key: 'profit', label: 'Profit' }
