@@ -56,18 +56,10 @@ export const Navigation = ({ currentPage, onPageChange, onLogout, userProfile }:
     <nav className="bg-gradient-header border-b border-border/20 shadow-lg backdrop-blur-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16 w-full">
-          {/* Far left: User avatar/name */}
-          <div className="hidden md:flex md:items-center md:space-x-3 px-3 py-2">
-            <img
-              src={userProfile?.avatar_url || '/default-avatar.png'}
-              alt={userProfile?.name || 'User'}
-              className="w-8 h-8 rounded-full object-cover border-2 border-primary shadow"
-            />
-            <div className="flex flex-col">
-              <span className="text-sm font-semibold text-primary-foreground">
-                {userProfile?.name || 'Loading...'}
-              </span>
-            </div>
+          {/* Left: Logo + App Name */}
+          <div className="flex items-center space-x-3 px-3 py-2">
+            <Truck className="h-6 w-6 text-primary-foreground" />
+            <span className="text-xl font-bold text-primary-foreground hidden sm:block">TripTrac</span>
           </div>
           {/* Center: Navigation */}
           <div className="hidden md:ml-8 md:flex flex-1 justify-evenly">
@@ -122,18 +114,34 @@ export const Navigation = ({ currentPage, onPageChange, onLogout, userProfile }:
               </div>
             </div>
           </div>
-          {/* Far right: Settings button */}
-          <div className="hidden md:flex md:items-center ml-auto">
+          {/* Right: User info + Settings */}
+          <div className="hidden md:flex md:items-center md:space-x-4 ml-auto">
+            <div className="flex items-center space-x-3 px-3 py-2 rounded-lg bg-primary-foreground/10">
+              <img
+                src={userProfile?.avatar_url || '/default-avatar.png'}
+                alt={userProfile?.name || 'User'}
+                className="w-8 h-8 rounded-full object-cover border-2 border-primary-foreground shadow"
+              />
+              <div className="flex flex-col">
+                <span className="text-sm font-semibold text-primary-foreground">
+                  {userProfile?.name || 'Loading...'}
+                </span>
+                <span className="text-xs text-primary-foreground/70 capitalize">
+                  {userProfile?.role || 'User'}
+                </span>
+              </div>
+            </div>
             <Button 
               variant="ghost" 
               size="sm" 
               onClick={() => onPageChange('settings')}
               className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10 transition-all duration-200"
+              title="Settings"
             >
-              <Settings className="h-4 w-4" />
+              <Settings className="h-5 w-5" />
             </Button>
           </div>
-          </div>
+        </div>
 
 
           {/* Mobile menu button */}
@@ -151,7 +159,23 @@ export const Navigation = ({ currentPage, onPageChange, onLogout, userProfile }:
 
         {/* Mobile Navigation */}
         {isMobileMenuOpen && (
-          <div className="md:hidden border-t border-border mt-2 pt-1 pb-2 animate-fade-in bg-card rounded-xl shadow-lg mx-2">
+          <div className="md:hidden border-t border-border mt-2 pt-3 pb-3 animate-fade-in bg-card rounded-xl shadow-lg mx-2">
+            {/* Mobile User Info */}
+            <div className="flex items-center space-x-3 px-4 py-3 mb-3 bg-secondary/30 rounded-lg mx-2">
+              <img
+                src={userProfile?.avatar_url || '/default-avatar.png'}
+                alt={userProfile?.name || 'User'}
+                className="w-10 h-10 rounded-full object-cover border-2 border-primary shadow"
+              />
+              <div className="flex flex-col">
+                <span className="text-sm font-semibold text-foreground">
+                  {userProfile?.name || 'Loading...'}
+                </span>
+                <span className="text-xs text-muted-foreground capitalize">
+                  {userProfile?.role || 'User'}
+                </span>
+              </div>
+            </div>
             <div className="space-y-2 px-2 py-1">
               {navigationItems.map(({ id, label, icon: Icon }) => (
                 <Button
@@ -211,9 +235,14 @@ export const Navigation = ({ currentPage, onPageChange, onLogout, userProfile }:
                 )}
               </div>
               <div className="pt-2 mt-2 border-t border-border space-y-1">
-                <Button variant="ghost" className="w-full justify-start text-base py-2 rounded-lg" onClick={() => { onPageChange('settings'); setIsMobileMenuOpen(false); }}>
-                  <Settings className="h-4 w-4 mr-2" />
-                  <span className="font-semibold">Settings</span>
+                <Button 
+                  variant="ghost" 
+                  className="w-full justify-start text-lg py-4 rounded-xl"
+                  style={{ minHeight: 40 }}
+                  onClick={() => { onPageChange('settings'); setIsMobileMenuOpen(false); }}
+                >
+                  <Settings className="h-8 w-8 mr-3" />
+                  <span className="font-bold text-lg">Settings</span>
                 </Button>
               </div>
             </div>
