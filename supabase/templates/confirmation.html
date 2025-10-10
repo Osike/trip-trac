@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <title>Verify your email</title>
+  <style>
+    body {
+      background-color: #f6f9fc;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      font-size: 14px;
+      line-height: 1.4;
+      margin: 0;
+      padding: 0;
+      -ms-text-size-adjust: 100%;
+      -webkit-text-size-adjust: 100%;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .email-wrapper {
+      background-color: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      margin: 40px 0;
+      padding: 40px;
+    }
+    .logo {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .logo h1 {
+      color: #2563eb;
+      font-size: 28px;
+      font-weight: 700;
+      margin: 0;
+    }
+    h2 {
+      color: #1a1a1a;
+      font-size: 24px;
+      font-weight: 600;
+      margin: 0 0 20px;
+      text-align: center;
+    }
+    p {
+      color: #525252;
+      font-size: 16px;
+      line-height: 1.6;
+      margin: 0 0 16px;
+    }
+    .otp-container {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 12px;
+      padding: 30px;
+      margin: 30px 0;
+      text-align: center;
+    }
+    .otp-label {
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+    }
+    .otp-code {
+      background-color: rgba(255, 255, 255, 0.2);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 8px;
+      color: #ffffff;
+      font-size: 36px;
+      font-weight: 700;
+      letter-spacing: 8px;
+      padding: 20px;
+      margin: 0 auto;
+      display: inline-block;
+      font-family: 'Courier New', monospace;
+    }
+    .divider {
+      border-top: 1px solid #e5e7eb;
+      margin: 30px 0;
+    }
+    .alternative {
+      background-color: #f9fafb;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    .button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 6px;
+      color: #ffffff;
+      display: inline-block;
+      font-size: 16px;
+      font-weight: 600;
+      padding: 14px 32px;
+      text-decoration: none;
+      text-align: center;
+      margin: 10px 0;
+    }
+    .footer {
+      color: #737373;
+      font-size: 12px;
+      text-align: center;
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid #e5e7eb;
+    }
+    .warning {
+      background-color: #fef3c7;
+      border-left: 4px solid #f59e0b;
+      padding: 16px;
+      margin: 20px 0;
+      border-radius: 4px;
+    }
+    .warning p {
+      color: #92400e;
+      font-size: 14px;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="email-wrapper">
+      <div class="logo">
+        <h1>🚚 TripTrac</h1>
+      </div>
+      
+      <h2>Verify Your Email</h2>
+      
+      <p>Hello{{ if .Data.name }}, {{ .Data.name }}{{ end }}!</p>
+      
+      <p>Thank you for signing up with TripTrac. To complete your registration, please use the verification code below:</p>
+      
+      <div class="otp-container">
+        <div class="otp-label">Your Verification Code</div>
+        <div class="otp-code">{{ .Token }}</div>
+      </div>
+      
+      <div class="warning">
+        <p><strong>⏱️ This code expires in 60 minutes</strong></p>
+      </div>
+      
+      <p style="text-align: center;">Enter this code in the verification screen to activate your account.</p>
+      
+      <div class="divider"></div>
+      
+      <div class="alternative">
+        <p style="margin-bottom: 10px;"><strong>Alternative: Click the link below</strong></p>
+        <p style="text-align: center;">
+          <a href="{{ .ConfirmationURL }}" class="button">Verify Email Address</a>
+        </p>
+        <p style="font-size: 12px; color: #737373; margin-top: 15px;">If the button doesn't work, copy and paste this link into your browser:</p>
+        <p style="font-size: 12px; color: #2563eb; word-break: break-all;">{{ .ConfirmationURL }}</p>
+      </div>
+      
+      <div class="footer">
+        <p>If you didn't create an account with TripTrac, please ignore this email.</p>
+        <p style="margin-top: 10px;">© 2025 TripTrac. All rights reserved.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

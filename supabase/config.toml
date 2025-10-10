@@ -36,6 +36,10 @@ jwt_expiry = 3600
 enable_signup = true
 enable_confirmations = true
 
+[auth.email.template.confirmation]
+subject = "Verify Your Email - TripTrac"
+content_path = "./supabase/templates/confirmation.html"
+
 [functions]
 enabled = true
 
