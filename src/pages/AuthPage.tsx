@@ -40,11 +40,11 @@ const AuthPage = () => {
     setError("");
 
     try {
-      const { data, error } = await supabase.auth.signUp({
+      // First, send OTP to email
+      const { error: otpError } = await supabase.auth.signInWithOtp({
         email,
-        password,
         options: {
-          emailRedirectTo: `${window.location.origin}/`,
+          shouldCreateUser: true,
           data: {
             name,
             role: "admin"
@@ -52,15 +52,13 @@ const AuthPage = () => {
         }
       });
 
-      if (error) {
-        setError(error.message);
+      if (otpError) {
+        setError(otpError.message);
         return;
       }
 
-      if (data.user) {
-        toast.success("Verification code sent! Please check your email.");
-        setShowOtpInput(true);
-      }
+      toast.success("Verification code sent! Please check your email.");
+      setShowOtpInput(true);
     } catch (err) {
       setError("An unexpected error occurred");
     } finally {
@@ -77,7 +75,7 @@ const AuthPage = () => {
       const { data, error } = await supabase.auth.verifyOtp({
         email,
         token: otp,
-        type: 'signup'
+        type: 'email'
       });
 
       if (error) {
@@ -86,7 +84,21 @@ const AuthPage = () => {
       }
 
       if (data.user) {
-        toast.success("Email verified successfully! Welcome!");
+        // Set password after OTP verification
+        const { error: updateError } = await supabase.auth.updateUser({
+          password: password,
+          data: {
+            name: name,
+            role: "admin"
+          }
+        });
+
+        if (updateError) {
+          setError(updateError.message);
+          return;
+        }
+
+        toast.success("Account created successfully! Welcome!");
         navigate("/");
       }
     } catch (err) {
