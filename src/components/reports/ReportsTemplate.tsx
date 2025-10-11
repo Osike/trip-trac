@@ -252,7 +252,7 @@ export const ReportsTemplate: React.FC<ReportsTemplateProps> = ({
         doc.text('DRIVER:', 12, 52);
         doc.text(String(data.driver), 40, 52);
         doc.text('ROUTE:', 110, 45);
-        doc.text(`${data.from} → ${data.to}`, 135, 45);
+        doc.text(`${data.from} → ${data.to}`, 130, 45, { maxWidth: 70 });
         doc.text('TRIP DATE:', 110, 52);
         doc.text(data.tripDate ? new Date(data.tripDate).toLocaleDateString() : 'N/A', 135, 52);
 
