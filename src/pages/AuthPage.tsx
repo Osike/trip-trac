@@ -40,24 +40,25 @@ const AuthPage = () => {
     setError("");
 
     try {
-      // First, send OTP to email
-      const { error: otpError } = await supabase.auth.signInWithOtp({
+      const redirectUrl = `${window.location.origin}/`;
+      const { data, error: signUpError } = await supabase.auth.signUp({
         email,
+        password,
         options: {
-          shouldCreateUser: true,
           data: {
             name,
-            role: "admin"
-          }
-        }
+            role: "admin",
+          },
+          emailRedirectTo: redirectUrl,
+        },
       });
 
-      if (otpError) {
-        setError(otpError.message);
+      if (signUpError) {
+        setError(signUpError.message);
         return;
       }
 
-      toast.success("Verification code sent! Please check your email.");
+      toast.success("Confirmation code sent! Check your email.");
       setShowOtpInput(true);
     } catch (err) {
       setError("An unexpected error occurred");
@@ -72,11 +73,11 @@ const AuthPage = () => {
     setError("");
 
     try {
-      // Try verifying as email OTP first, then fall back to signup OTP (Supabase nuance)
+      // Verify signup confirmation code first, then fall back to email OTP
       const primary = await supabase.auth.verifyOtp({
         email,
         token: otp,
-        type: 'email',
+        type: 'signup',
       });
 
       let verifyData = primary.data;
@@ -86,7 +87,7 @@ const AuthPage = () => {
         const fallback = await supabase.auth.verifyOtp({
           email,
           token: otp,
-          type: 'signup',
+          type: 'email',
         });
         verifyData = fallback.data;
         verifyError = fallback.error;
@@ -98,21 +99,7 @@ const AuthPage = () => {
       }
 
       if (verifyData.user) {
-        // Set password after OTP verification
-        const { error: updateError } = await supabase.auth.updateUser({
-          password: password,
-          data: {
-            name: name,
-            role: "admin",
-          },
-        });
-
-        if (updateError) {
-          setError(updateError.message);
-          return;
-        }
-
-        toast.success("Account created successfully! Welcome!");
+        toast.success("Email verified! You're all set.");
         navigate("/");
       }
     } catch (err) {
