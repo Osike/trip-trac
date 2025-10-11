@@ -72,25 +72,39 @@ const AuthPage = () => {
     setError("");
 
     try {
-      const { data, error } = await supabase.auth.verifyOtp({
+      // Try verifying as email OTP first, then fall back to signup OTP (Supabase nuance)
+      const primary = await supabase.auth.verifyOtp({
         email,
         token: otp,
-        type: 'email'
+        type: 'email',
       });
 
-      if (error) {
-        setError(error.message);
+      let verifyData = primary.data;
+      let verifyError = primary.error;
+
+      if (verifyError) {
+        const fallback = await supabase.auth.verifyOtp({
+          email,
+          token: otp,
+          type: 'signup',
+        });
+        verifyData = fallback.data;
+        verifyError = fallback.error;
+      }
+
+      if (verifyError) {
+        setError(verifyError.message);
         return;
       }
 
-      if (data.user) {
+      if (verifyData.user) {
         // Set password after OTP verification
         const { error: updateError } = await supabase.auth.updateUser({
           password: password,
           data: {
             name: name,
-            role: "admin"
-          }
+            role: "admin",
+          },
         });
 
         if (updateError) {
