@@ -89,11 +89,12 @@ export const TripEditWithMaintenance = ({ trip, open, onOpenChange, onTripUpdate
         .select('id, description, cost')
         .eq('trip_id', trip.id);
 
-      if (error) throw error;
+      if (error) {
         console.error('Error fetching maintenance items:', error);
-        // Don't throw error, just log it and continue
         setMaintenanceItems([]);
         return;
+      }
+      
       // Transform the data to match our interface
       const transformedItems = (data || []).map(item => ({
         id: item.id,
