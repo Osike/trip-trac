@@ -59,11 +59,13 @@ export const TripEditWithMaintenance = ({ trip, open, onOpenChange, onTripUpdate
   const [trucks, setTrucks] = useState<Truck[]>([]);
 
   useEffect(() => {
-    if (trip && open) {
-      // Fetch dropdown data first
-      fetchDropdownData();
+    const loadTripData = async () => {
+      if (!trip || !open) return;
       
-      // Set form with existing trip data
+      // First fetch dropdown data
+      await fetchDropdownData();
+      
+      // Then populate form with trip data
       setForm({
         customer_id: trip.customer_id || "",
         origin: trip.origin || "",
@@ -80,10 +82,12 @@ export const TripEditWithMaintenance = ({ trip, open, onOpenChange, onTripUpdate
         status: trip.status || "scheduled"
       });
       
-      // Fetch maintenance items for this trip
-      fetchMaintenanceItems();
-    }
-  }, [trip, open]);
+      // Finally fetch maintenance items
+      await fetchMaintenanceItems();
+    };
+    
+    loadTripData();
+  }, [trip?.id, open]);
 
   const fetchMaintenanceItems = async () => {
     if (!trip?.id) return;
@@ -247,6 +251,7 @@ export const TripEditWithMaintenance = ({ trip, open, onOpenChange, onTripUpdate
             <div>
               <label className="block text-sm font-medium mb-1">Customer</label>
               <Select
+                key={`customer-${trip?.id}-${form.customer_id}`}
                 value={form.customer_id}
                 onValueChange={(value) => handleSelectChange("customer_id", value)}
               >
@@ -303,6 +308,7 @@ export const TripEditWithMaintenance = ({ trip, open, onOpenChange, onTripUpdate
             <div>
               <label className="block text-sm font-medium mb-1">Driver</label>
               <Select
+                key={`driver-${trip?.id}-${form.driver_id}`}
                 value={form.driver_id}
                 onValueChange={(value) => handleSelectChange("driver_id", value)}
               >
@@ -322,6 +328,7 @@ export const TripEditWithMaintenance = ({ trip, open, onOpenChange, onTripUpdate
             <div>
               <label className="block text-sm font-medium mb-1">Truck</label>
               <Select
+                key={`truck-${trip?.id}-${form.truck_id}`}
                 value={form.truck_id}
                 onValueChange={(value) => handleSelectChange("truck_id", value)}
               >
@@ -417,6 +424,7 @@ export const TripEditWithMaintenance = ({ trip, open, onOpenChange, onTripUpdate
           <div>
             <label className="block text-sm font-medium mb-1">Status</label>
             <Select
+              key={`status-${trip?.id}-${form.status}`}
               value={form.status}
               onValueChange={(value) => handleSelectChange("status", value)}
             >
