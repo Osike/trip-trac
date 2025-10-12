@@ -65,21 +65,33 @@ export const TripEditWithMaintenance = ({ trip, open, onOpenChange, onTripUpdate
       // First fetch dropdown data
       await fetchDropdownData();
       
+      // Fetch complete trip data from database
+      const { data: tripData, error } = await supabase
+        .from('trips')
+        .select('*')
+        .eq('id', trip.id)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching trip data:', error);
+        return;
+      }
+      
       // Then populate form with trip data
       setForm({
-        customer_id: trip.customer_id || "",
-        origin: trip.origin || "",
-        destination: trip.destination || "",
-        driver_id: trip.driver_id || "",
-        truck_id: trip.truck_id || "",
-        scheduled_date: trip.scheduled_date ? trip.scheduled_date.split('T')[0] : "",
-        distance: trip.distance ? trip.distance.toString() : "",
-        rate: trip.RATE ? trip.RATE.toString() : "",
-        fuel: trip.FUEL ? trip.FUEL.toString() : "",
-        mileage: trip.MILEAGE ? trip.MILEAGE.toString() : "",
-        road_tolls: trip["ROAD TOLLS"] ? trip["ROAD TOLLS"].toString() : "",
-        salary: trip.SALARY ? trip.SALARY.toString() : "",
-        status: trip.status || "scheduled"
+        customer_id: tripData?.customer_id || "",
+        origin: tripData?.origin || "",
+        destination: tripData?.destination || "",
+        driver_id: tripData?.driver_id || "",
+        truck_id: tripData?.truck_id || "",
+        scheduled_date: tripData?.scheduled_date ? tripData.scheduled_date.split('T')[0] : "",
+        distance: tripData?.distance ? tripData.distance.toString() : "",
+        rate: tripData?.RATE ? tripData.RATE.toString() : "",
+        fuel: tripData?.FUEL ? tripData.FUEL.toString() : "",
+        mileage: tripData?.MILEAGE ? tripData.MILEAGE.toString() : "",
+        road_tolls: tripData?.["ROAD TOLLS"] ? tripData["ROAD TOLLS"].toString() : "",
+        salary: tripData?.SALARY ? tripData.SALARY.toString() : "",
+        status: tripData?.status || "scheduled"
       });
       
       // Finally fetch maintenance items
