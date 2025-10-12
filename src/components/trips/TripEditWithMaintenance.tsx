@@ -60,6 +60,10 @@ export const TripEditWithMaintenance = ({ trip, open, onOpenChange, onTripUpdate
 
   useEffect(() => {
     if (trip && open) {
+      // Fetch dropdown data first
+      fetchDropdownData();
+      
+      // Set form with existing trip data
       setForm({
         customer_id: trip.customer_id || "",
         origin: trip.origin || "",
@@ -75,8 +79,9 @@ export const TripEditWithMaintenance = ({ trip, open, onOpenChange, onTripUpdate
         salary: trip.SALARY ? trip.SALARY.toString() : "",
         status: trip.status || "scheduled"
       });
+      
+      // Fetch maintenance items for this trip
       fetchMaintenanceItems();
-      fetchDropdownData();
     }
   }, [trip, open]);
 
