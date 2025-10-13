@@ -315,8 +315,8 @@ export const ReportsTemplate: React.FC<ReportsTemplateProps> = ({
           doc.text(`$${Number(value).toFixed(2)}`, 40 + (i % 2 === 0 ? 0 : 60), breakdownY + Math.floor(i / 2) * 8);
         });
 
-        // Total Summary
-        const summaryY = breakdownY + 28;
+        // Total Summary - Fixed at footer position
+        const summaryY = 250; // Fixed position near bottom of page
         doc.setFillColor(41, 128, 185);
         doc.rect(12, summaryY, 186, 28, 'F');
         doc.setTextColor(255, 255, 255);
