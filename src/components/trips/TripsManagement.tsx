@@ -394,10 +394,7 @@ export const TripsManagement = () => {
           profiles (name),
           trucks (plate_number)
         `)
-        .or(`
-          origin.ilike.%${term}%,
-          destination.ilike.%${term}%
-        `)
+        .or(`origin.ilike.%${term}%,destination.ilike.%${term}%`)
         .order('scheduled_date', { ascending: false });
 
       if (error) {
