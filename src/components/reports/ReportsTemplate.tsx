@@ -10,7 +10,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import championsLogo from "@/assets/champions-logo.png";
 
 interface ReportsTemplateProps {
   title: string;
@@ -250,8 +249,9 @@ export const ReportsTemplate: React.FC<ReportsTemplateProps> = ({
           
           // Add logo with low opacity as watermark
           try {
-            doc.addImage(championsLogo, 'PNG', x, y, logoSize, logoSize, undefined, 'NONE');
-            // Apply opacity by drawing a semi-transparent rectangle over it
+            const logoUrl = '/truck.png';
+            doc.addImage(logoUrl, 'PNG', x, y, logoSize, logoSize, undefined, 'NONE');
+            // Apply opacity by drawing a semi-transparent white rectangle over it
             doc.setFillColor(255, 255, 255);
             doc.setGState({ opacity: 0.9 });
             doc.rect(x, y, logoSize, logoSize, 'F');
