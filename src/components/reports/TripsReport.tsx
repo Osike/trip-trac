@@ -31,13 +31,9 @@ export const TripsReport = () => {
       ]
     },
     {
-      label: "Distance Range",
-      key: "distance_range",
-      options: [
-        { label: "Short (<1000 kilometers)", value: "short" },
-        { label: "Medium (1000-5000 kilometers)", value: "medium" },
-        { label: "Long (>5000 kilometers)", value: "long" }
-      ]
+      label: "Vehicle Plate Number",
+      key: "vehicle_plate",
+      type: "truck_select" // Special type to load trucks dynamically
     }
   ];
 

@@ -58,6 +58,10 @@ serve(async (req) => {
     if (filters?.status && filters.status !== '') {
       query = query.eq('status', filters.status);
     }
+    
+    if (filters?.vehicle_plate && filters.vehicle_plate !== '') {
+      query = query.eq('trucks.plate_number', filters.vehicle_plate);
+    }
 
     const { data: trips, error } = await query;
 

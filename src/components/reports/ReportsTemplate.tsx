@@ -19,7 +19,8 @@ interface ReportsTemplateProps {
   filterOptions?: { 
     label: string; 
     key: string; 
-    options: { label: string; value: string }[] 
+    options?: { label: string; value: string }[];
+    type?: string;
   }[];
   customTruckLog?: boolean;
 }
@@ -42,6 +43,19 @@ export const ReportsTemplate: React.FC<ReportsTemplateProps> = ({
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [reportData, setReportData] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [trucks, setTrucks] = useState<any[]>([]);
+
+  // Load trucks for vehicle plate filter
+  React.useEffect(() => {
+    const loadTrucks = async () => {
+      const { data } = await supabase
+        .from('trucks')
+        .select('plate_number')
+        .order('plate_number');
+      if (data) setTrucks(data);
+    };
+    loadTrucks();
+  }, []);
 
   // Handle date range change
   const handleDateRangeChange = (value: DateRangePickerValue) => {
@@ -385,11 +399,19 @@ export const ReportsTemplate: React.FC<ReportsTemplateProps> = ({
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All</SelectItem>
-                        {filter.options.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
+                        {filter.type === 'truck_select' ? (
+                          trucks.map((truck) => (
+                            <SelectItem key={truck.plate_number} value={truck.plate_number}>
+                              {truck.plate_number}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          filter.options?.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
