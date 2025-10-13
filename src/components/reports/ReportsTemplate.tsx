@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import championsLogo from "@/assets/champions-logo.png";
 
 interface ReportsTemplateProps {
   title: string;
@@ -238,6 +239,30 @@ export const ReportsTemplate: React.FC<ReportsTemplateProps> = ({
           fuel: data.fuel || 0,
           rate: data.rate || data.RATE || 0
         };
+
+        // Add watermark logo in the center of the page
+        const addWatermark = () => {
+          const pageWidth = doc.internal.pageSize.getWidth();
+          const pageHeight = doc.internal.pageSize.getHeight();
+          const logoSize = 100;
+          const x = (pageWidth - logoSize) / 2;
+          const y = (pageHeight - logoSize) / 2;
+          
+          // Add logo with low opacity as watermark
+          try {
+            doc.addImage(championsLogo, 'PNG', x, y, logoSize, logoSize, undefined, 'NONE');
+            // Apply opacity by drawing a semi-transparent rectangle over it
+            doc.setFillColor(255, 255, 255);
+            doc.setGState({ opacity: 0.9 });
+            doc.rect(x, y, logoSize, logoSize, 'F');
+            doc.setGState({ opacity: 1 });
+          } catch (e) {
+            console.log('Watermark not added');
+          }
+        };
+
+        // Add watermark
+        addWatermark();
 
         // Header
         doc.setFillColor(41, 128, 185);
