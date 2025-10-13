@@ -385,7 +385,7 @@ export const TripsManagement = () => {
   const searchTrips = async (term: string) => {
     setIsSearching(true);
     try {
-      // Only filter top-level columns in Supabase
+      // Fetch all trips with related data
       const { data, error } = await supabase
         .from('trips')
         .select(`
@@ -394,7 +394,6 @@ export const TripsManagement = () => {
           profiles (name),
           trucks (plate_number)
         `)
-        .or(`origin.ilike.%${term}%,destination.ilike.%${term}%`)
         .order('scheduled_date', { ascending: false });
 
       if (error) {
@@ -403,7 +402,7 @@ export const TripsManagement = () => {
         return;
       }
 
-      // Now filter joined columns in JS
+      // Filter all columns in JavaScript
       const lowerTerm = term.toLowerCase();
       const filteredTrips = (data as any[]).filter(trip => {
         return (
