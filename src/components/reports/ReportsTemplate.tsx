@@ -253,7 +253,7 @@ export const ReportsTemplate: React.FC<ReportsTemplateProps> = ({
             doc.addImage(logoUrl, 'PNG', x, y, logoSize, logoSize, undefined, 'NONE');
             // Apply opacity by drawing a semi-transparent white rectangle over it
             doc.setFillColor(255, 255, 255);
-            doc.setGState({ opacity: 0.9 });
+            doc.setGState({ opacity: 0.1 }); // Lower opacity for more transparency
             doc.rect(x, y, logoSize, logoSize, 'F');
             doc.setGState({ opacity: 1 });
           } catch (e) {
