@@ -34,6 +34,8 @@ interface DisplayTruck {
 export const TrucksManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [open, setOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editingTruck, setEditingTruck] = useState<TruckFromDB | null>(null);
   const [form, setForm] = useState({
     plate_number: "",
     model: "",
@@ -44,6 +46,7 @@ export const TrucksManagement = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [trucks, setTrucks] = useState<DisplayTruck[]>([]);
+  const [trucksFromDB, setTrucksFromDB] = useState<TruckFromDB[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
   // Fetch trucks from database on component mount
@@ -79,6 +82,8 @@ export const TrucksManagement = () => {
         return;
       }
 
+      setTrucksFromDB(data as TruckFromDB[]);
+
       // Transform data for display
       const formattedTrucks = (data as TruckFromDB[]).map(truck => ({
         id: truck.id,
@@ -113,6 +118,8 @@ export const TrucksManagement = () => {
         console.error('Error:', error);
         return;
       }
+
+      setTrucksFromDB(data as TruckFromDB[]);
 
       // Transform data for display
       const formattedTrucks = (data as TruckFromDB[]).map(truck => ({
@@ -195,6 +202,70 @@ export const TrucksManagement = () => {
       assigned_driver_id: "",
     });
     
+    // Refresh trucks list
+    fetchTrucks();
+  };
+
+  const handleEdit = (truckId: string) => {
+    const truck = trucksFromDB.find(t => t.id === truckId);
+    if (truck) {
+      setEditingTruck(truck);
+      setForm({
+        plate_number: truck.plate_number,
+        model: truck.model,
+        capacity: truck.capacity?.toString() || "",
+        status: truck.status,
+        assigned_driver_id: truck.assigned_driver_id || "",
+      });
+      setEditOpen(true);
+    }
+  };
+
+  const handleUpdateTruck = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTruck) return;
+
+    setLoading(true);
+    setError("");
+
+    const allowedStatus = ["active", "inactive", "maintenance"];
+    const statusValue = allowedStatus.includes(form.status.toLowerCase())
+      ? (form.status.toLowerCase() as "active" | "inactive" | "maintenance")
+      : "active";
+
+    const payload = {
+      plate_number: form.plate_number,
+      model: form.model,
+      capacity: form.capacity ? Number(form.capacity) : null,
+      status: statusValue,
+      assigned_driver_id: form.assigned_driver_id || null,
+    };
+
+    const { error: updateError } = await supabase
+      .from("trucks")
+      .update(payload)
+      .eq("id", editingTruck.id);
+
+    if (updateError) {
+      setError(updateError.message);
+      setLoading(false);
+      return;
+    }
+
+    toast.success('Truck updated successfully');
+    setLoading(false);
+    setEditOpen(false);
+    setEditingTruck(null);
+
+    // Reset form
+    setForm({
+      plate_number: "",
+      model: "",
+      capacity: "",
+      status: "active",
+      assigned_driver_id: "",
+    });
+
     // Refresh trucks list
     fetchTrucks();
   };
@@ -303,6 +374,99 @@ export const TrucksManagement = () => {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Edit Truck Dialog */}
+        <Dialog open={editOpen} onOpenChange={setEditOpen}>
+          <DialogContent className="max-w-[95vw] sm:max-w-[500px] h-[90vh] max-h-[90vh] sm:h-auto sm:max-h-[85vh] overflow-hidden flex flex-col">
+            <DialogHeader className="flex-shrink-0">
+              <DialogTitle>Edit Truck</DialogTitle>
+              <DialogDescription>
+                Update truck details.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="overflow-y-auto flex-grow pr-1 -mr-1 pb-4">
+              <form onSubmit={handleUpdateTruck} className="space-y-4">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Plate Number *</label>
+                    <Input 
+                      name="plate_number" 
+                      placeholder="e.g., ABC-1234" 
+                      value={form.plate_number} 
+                      onChange={handleFormChange} 
+                      required 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Truck Model *</label>
+                    <Input 
+                      name="model" 
+                      placeholder="e.g., Volvo FH16" 
+                      value={form.model} 
+                      onChange={handleFormChange} 
+                      required 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Capacity (tons) *</label>
+                    <Input 
+                      name="capacity" 
+                      type="number"
+                      placeholder="e.g., 20" 
+                      value={form.capacity} 
+                      onChange={handleFormChange} 
+                      required 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Status *</label>
+                    <Select value={form.status} onValueChange={handleStatusChange} required>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="inactive">Inactive</SelectItem>
+                        <SelectItem value="maintenance">Maintenance</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Assigned Driver ID (Optional)</label>
+                    <Input 
+                      name="assigned_driver_id" 
+                      placeholder="Driver ID" 
+                      value={form.assigned_driver_id} 
+                      onChange={handleFormChange} 
+                    />
+                    <p className="text-xs text-muted-foreground">Leave empty if no driver assigned</p>
+                  </div>
+                </div>
+                
+                {error && (
+                  <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-sm">
+                    {error}
+                  </div>
+                )}
+                <div className="flex gap-3 justify-end sticky bottom-0 pt-4 bg-background border-t">
+                  <DialogClose asChild>
+                    <Button type="button" variant="outline" disabled={loading}>Cancel</Button>
+                  </DialogClose>
+                  <Button type="submit" disabled={loading} className="min-w-[120px]">
+                    {loading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Updating...
+                      </>
+                    ) : (
+                      "Update Truck"
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <Card className="shadow-card">
@@ -374,7 +538,12 @@ export const TrucksManagement = () => {
                       </div>
                     </div>
                     <div className="flex space-x-2 pt-2">
-                      <Button variant="outline" size="sm" className="flex-1">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={() => handleEdit(truck.id)}
+                      >
                         <Settings className="h-3 w-3 mr-1" />
                         Edit
                       </Button>
