@@ -48,6 +48,31 @@ export const TrucksManagement = () => {
   const [trucks, setTrucks] = useState<DisplayTruck[]>([]);
   const [trucksFromDB, setTrucksFromDB] = useState<TruckFromDB[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [drivers, setDrivers] = useState<{ id: string; name: string }[]>([]);
+
+  // Fetch drivers on component mount
+  useEffect(() => {
+    fetchDrivers();
+  }, []);
+
+  const fetchDrivers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, name')
+        .eq('role', 'driver')
+        .order('name');
+
+      if (error) {
+        console.error('Error fetching drivers:', error);
+        return;
+      }
+
+      setDrivers(data || []);
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
 
   // Fetch trucks from database on component mount
   useEffect(() => {
@@ -156,6 +181,10 @@ export const TrucksManagement = () => {
 
   const handleStatusChange = (value: "active" | "inactive" | "maintenance") => {
     setForm((prev) => ({ ...prev, status: value }));
+  };
+
+  const handleDriverChange = (value: string) => {
+    setForm((prev) => ({ ...prev, assigned_driver_id: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -339,14 +368,20 @@ export const TrucksManagement = () => {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground">Assigned Driver ID (Optional)</label>
-                    <Input 
-                      name="assigned_driver_id" 
-                      placeholder="Driver ID" 
-                      value={form.assigned_driver_id} 
-                      onChange={handleFormChange} 
-                    />
-                    <p className="text-xs text-muted-foreground">Leave empty if no driver assigned</p>
+                    <label className="text-sm font-medium text-foreground">Assigned Driver</label>
+                    <Select value={form.assigned_driver_id} onValueChange={handleDriverChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select driver (optional)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">None</SelectItem>
+                        {drivers.map((driver) => (
+                          <SelectItem key={driver.id} value={driver.id}>
+                            {driver.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
                 
@@ -432,14 +467,20 @@ export const TrucksManagement = () => {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground">Assigned Driver ID (Optional)</label>
-                    <Input 
-                      name="assigned_driver_id" 
-                      placeholder="Driver ID" 
-                      value={form.assigned_driver_id} 
-                      onChange={handleFormChange} 
-                    />
-                    <p className="text-xs text-muted-foreground">Leave empty if no driver assigned</p>
+                    <label className="text-sm font-medium text-foreground">Assigned Driver</label>
+                    <Select value={form.assigned_driver_id} onValueChange={handleDriverChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select driver (optional)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">None</SelectItem>
+                        {drivers.map((driver) => (
+                          <SelectItem key={driver.id} value={driver.id}>
+                            {driver.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
                 
