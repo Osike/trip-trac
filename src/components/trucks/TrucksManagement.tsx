@@ -9,6 +9,8 @@ import { Dialog, DialogTrigger, DialogContent, DialogClose, DialogHeader, Dialog
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+
+
 interface TruckFromDB {
   id: string;
   plate_number: string;
@@ -49,29 +51,47 @@ export const TrucksManagement = () => {
   const [trucksFromDB, setTrucksFromDB] = useState<TruckFromDB[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [drivers, setDrivers] = useState<{ id: string; name: string }[]>([]);
-
-  // Fetch drivers on component mount
+  // Fetch drivers for dropdown
   useEffect(() => {
+    const fetchDrivers = async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, name, role')
+        .eq('role', 'driver')
+        .order('name', { ascending: true });
+      if (!error && data) {
+        setDrivers(data.map((d: any) => ({ id: d.id, name: d.name })));
+      }
+    };
     fetchDrivers();
   }, []);
 
-  const fetchDrivers = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, name')
-        .eq('role', 'driver')
-        .order('name');
-
-      if (error) {
-        console.error('Error fetching drivers:', error);
-        return;
-      }
-
-      setDrivers(data || []);
-    } catch (error) {
-      console.error('Error:', error);
+  // Delete truck handler
+  const handleDeleteTruck = async () => {
+    if (!editingTruck) return;
+    setLoading(true);
+    setError("");
+    const { error: deleteError } = await supabase
+      .from("trucks")
+      .delete()
+      .eq("id", editingTruck.id);
+    if (deleteError) {
+      setError(deleteError.message);
+      setLoading(false);
+      return;
     }
+    toast.success('Truck deleted successfully');
+    setLoading(false);
+    setEditOpen(false);
+    setEditingTruck(null);
+    setForm({
+      plate_number: "",
+      model: "",
+      capacity: "",
+      status: "active",
+      assigned_driver_id: "",
+    });
+    fetchTrucks();
   };
 
   // Fetch trucks from database on component mount
@@ -183,10 +203,6 @@ export const TrucksManagement = () => {
     setForm((prev) => ({ ...prev, status: value }));
   };
 
-  const handleDriverChange = (value: string) => {
-    setForm((prev) => ({ ...prev, assigned_driver_id: value }));
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -196,21 +212,14 @@ export const TrucksManagement = () => {
     const statusValue = allowedStatus.includes(form.status.toLowerCase())
       ? (form.status.toLowerCase() as "active" | "inactive" | "maintenance")
       : "active";
-      const payload: {
-        plate_number: string;
-        model: string;
-        capacity?: number | null;
-        status?: "active" | "inactive" | "maintenance";
-        assigned_driver_id?: string | null;
-      } = {
-        plate_number: form.plate_number,
-        model: form.model,
-        capacity: form.capacity ? Number(form.capacity) : null,
-        status: statusValue,
-        assigned_driver_id: form.assigned_driver_id || null,
-      };
-      
-      const { error: truckError } = await supabase.from("trucks").insert(payload);
+    const payload = {
+      plate_number: form.plate_number,
+      model: form.model,
+      capacity: form.capacity ? Number(form.capacity) : null,
+      status: statusValue,
+      assigned_driver_id: !form.assigned_driver_id || form.assigned_driver_id === "unassigned" ? null : form.assigned_driver_id,
+    };
+    const { error: truckError } = await supabase.from("trucks").insert(payload);
       
     if (truckError) {
       setError(truckError.message);
@@ -262,13 +271,13 @@ export const TrucksManagement = () => {
       ? (form.status.toLowerCase() as "active" | "inactive" | "maintenance")
       : "active";
 
-    const payload = {
-      plate_number: form.plate_number,
-      model: form.model,
-      capacity: form.capacity ? Number(form.capacity) : null,
-      status: statusValue,
-      assigned_driver_id: form.assigned_driver_id || null,
-    };
+        const payload = {
+          plate_number: form.plate_number,
+          model: form.model,
+          capacity: form.capacity ? Number(form.capacity) : null,
+          status: statusValue,
+          assigned_driver_id: !form.assigned_driver_id || form.assigned_driver_id === "unassigned" ? null : form.assigned_driver_id,
+        };
 
     const { error: updateError } = await supabase
       .from("trucks")
@@ -368,20 +377,22 @@ export const TrucksManagement = () => {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground">Assigned Driver</label>
-                    <Select value={form.assigned_driver_id} onValueChange={handleDriverChange}>
+                    <label className="text-sm font-medium text-foreground">Assigned Driver (Optional)</label>
+                    <Select
+                      value={form.assigned_driver_id === "" || form.assigned_driver_id === null ? "unassigned" : form.assigned_driver_id}
+                      onValueChange={(value) => setForm((prev) => ({ ...prev, assigned_driver_id: value === "unassigned" ? "" : value }))}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select driver (optional)" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">None</SelectItem>
+                        <SelectItem value="unassigned">Unassigned</SelectItem>
                         {drivers.map((driver) => (
-                          <SelectItem key={driver.id} value={driver.id}>
-                            {driver.name}
-                          </SelectItem>
+                          <SelectItem key={driver.id} value={driver.id}>{driver.name}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
+                    <p className="text-xs text-muted-foreground">Leave empty if no driver assigned</p>
                   </div>
                 </div>
                 
@@ -467,20 +478,22 @@ export const TrucksManagement = () => {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground">Assigned Driver</label>
-                    <Select value={form.assigned_driver_id} onValueChange={handleDriverChange}>
+                    <label className="text-sm font-medium text-foreground">Assigned Driver (Optional)</label>
+                    <Select
+                      value={form.assigned_driver_id === "" || form.assigned_driver_id === null ? "unassigned" : form.assigned_driver_id}
+                      onValueChange={(value) => setForm((prev) => ({ ...prev, assigned_driver_id: value === "unassigned" ? "" : value }))}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select driver (optional)" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">None</SelectItem>
+                        <SelectItem value="unassigned">Unassigned</SelectItem>
                         {drivers.map((driver) => (
-                          <SelectItem key={driver.id} value={driver.id}>
-                            {driver.name}
-                          </SelectItem>
+                          <SelectItem key={driver.id} value={driver.id}>{driver.name}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
+                    <p className="text-xs text-muted-foreground">Leave empty if no driver assigned</p>
                   </div>
                 </div>
                 
@@ -493,6 +506,14 @@ export const TrucksManagement = () => {
                   <DialogClose asChild>
                     <Button type="button" variant="outline" disabled={loading}>Cancel</Button>
                   </DialogClose>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    disabled={loading}
+                    onClick={handleDeleteTruck}
+                  >
+                    Delete Truck
+                  </Button>
                   <Button type="submit" disabled={loading} className="min-w-[120px]">
                     {loading ? (
                       <>
@@ -587,9 +608,6 @@ export const TrucksManagement = () => {
                       >
                         <Settings className="h-3 w-3 mr-1" />
                         Edit
-                      </Button>
-                      <Button variant="outline" size="sm" className="flex-1">
-                        View Details
                       </Button>
                     </div>
                   </CardContent>
