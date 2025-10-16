@@ -281,16 +281,14 @@ export default function MaintenanceReports() {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Maintenance Reports</h1>
-          <p className="text-muted-foreground">Analyze maintenance costs and trip profitability</p>
-        </div>
+    <div className="max-w-full p-2 sm:p-4 md:p-6 space-y-4 overflow-x-hidden">
+      <div className="mb-2 sm:mb-4">
+        <h1 className="text-2xl sm:text-3xl font-bold">Maintenance Reports</h1>
+        <p className="text-sm sm:text-base text-muted-foreground">Analyze maintenance costs and trip profitability</p>
       </div>
 
       {/* Summary Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Profit</CardTitle>
@@ -339,42 +337,41 @@ export default function MaintenanceReports() {
       {/* Filters */}
       <Card>
         <CardHeader>
-          <CardTitle>Filters</CardTitle>
+          <CardTitle className="text-base sm:text-lg">Filters</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Date Range</label>
+              <label className="text-xs sm:text-sm font-medium">Date Range</label>
               <DateRangePicker
                 value={dateRange}
                 onChange={setDateRange}
               />
             </div>
-
             <div className="space-y-2">
-              <label className="text-sm font-medium">Truck Filter</label>
+              <label className="text-xs sm:text-sm font-medium">Truck Filter</label>
               <Select value={selectedTruck} onValueChange={setSelectedTruck}>
-                <SelectTrigger>
+                <SelectTrigger className="min-w-0 w-full max-w-full truncate">
                   <SelectValue placeholder="All trucks" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All trucks</SelectItem>
                   {trucks.filter(truck => truck.id && truck.id !== "").map((truck) => (
-                    <SelectItem key={truck.id} value={truck.id}>
+                    <SelectItem key={truck.id} value={truck.id} className="truncate">
                       {truck.plate_number} - {truck.model}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-
             <div className="flex items-end">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => {
                   setDateRange({});
                   setSelectedTruck('all');
                 }}
+                className="w-full max-w-xs mx-auto"
               >
                 Clear Filters
               </Button>
@@ -384,16 +381,18 @@ export default function MaintenanceReports() {
       </Card>
 
       {/* Report Type Tabs */}
-      <div className="flex space-x-4">
-        <Button 
+      <div className="flex flex-col xs:flex-row gap-2 sm:gap-4 w-full">
+        <Button
           variant={activeTab === 'profits' ? 'default' : 'outline'}
           onClick={() => setActiveTab('profits')}
+          className="w-full xs:w-auto min-w-[120px] max-w-full truncate"
         >
           Trip Profits Analysis
         </Button>
-        <Button 
+        <Button
           variant={activeTab === 'maintenance' ? 'default' : 'outline'}
           onClick={() => setActiveTab('maintenance')}
+          className="w-full xs:w-auto min-w-[120px] max-w-full truncate"
         >
           Truck Maintenance Summary
         </Button>
