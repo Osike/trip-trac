@@ -19,6 +19,8 @@ interface Profile {
   is_verified: boolean;
   created_at: string;
   updated_at: string;
+  IDNUMBER?: number;
+  LICENSE_EXP?: string;
 }
 
 export const UsersManagement = () => {
@@ -26,10 +28,19 @@ export const UsersManagement = () => {
   const [users, setUsers] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
     role: "driver" as 'admin' | 'dispatcher' | 'driver'
+  });
+  const [editFormData, setEditFormData] = useState({
+    id: "",
+    user_id: "",
+    name: "",
+    phone: "",
+    IDNUMBER: "",
+    LICENSE_EXP: ""
   });
 
   useEffect(() => {
@@ -119,6 +130,58 @@ export const UsersManagement = () => {
       }
 
       toast.success('User deleted successfully');
+      fetchUsers();
+    } catch (error) {
+      toast.error('An unexpected error occurred');
+      console.error('Error:', error);
+    }
+  };
+
+  const handleEditUser = (user: Profile) => {
+    setEditFormData({
+      id: user.id,
+      user_id: user.user_id,
+      name: user.name,
+      phone: user.phone || "",
+      IDNUMBER: user.IDNUMBER?.toString() || "",
+      LICENSE_EXP: user.LICENSE_EXP || ""
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleEditInputChange = (field: string, value: string) => {
+    setEditFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleUpdateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!editFormData.name.trim()) {
+      toast.error('Name is required');
+      return;
+    }
+
+    try {
+      const updateData: any = {
+        name: editFormData.name,
+        phone: editFormData.phone || null,
+        IDNUMBER: editFormData.IDNUMBER ? parseFloat(editFormData.IDNUMBER) : null,
+        LICENSE_EXP: editFormData.LICENSE_EXP || null
+      };
+
+      const { error } = await supabase
+        .from('profiles')
+        .update(updateData)
+        .eq('user_id', editFormData.user_id);
+
+      if (error) {
+        toast.error('Failed to update user');
+        console.error('Error:', error);
+        return;
+      }
+
+      toast.success('User updated successfully');
+      setIsEditDialogOpen(false);
       fetchUsers();
     } catch (error) {
       toast.error('An unexpected error occurred');
@@ -280,7 +343,11 @@ export const UsersManagement = () => {
                         </Badge>
                         {user.role === 'driver' && (
                           <div className="flex space-x-2">
-                            <Button variant="outline" size="sm">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleEditUser(user)}
+                            >
                               Edit
                             </Button>
                             <Button 
@@ -301,6 +368,67 @@ export const UsersManagement = () => {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-[95vw] sm:max-w-[500px] h-[90vh] max-h-[90vh] sm:h-auto sm:max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle>Edit Driver</DialogTitle>
+            <DialogDescription>
+              Update driver information and license details.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="overflow-y-auto flex-grow pr-1 -mr-1 pb-4">
+            <form onSubmit={handleUpdateUser} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-name">Full Name</Label>
+                <Input
+                  id="edit-name"
+                  value={editFormData.name}
+                  onChange={(e) => handleEditInputChange('name', e.target.value)}
+                  placeholder="Enter full name"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-phone">Phone Number</Label>
+                <Input
+                  id="edit-phone"
+                  value={editFormData.phone}
+                  onChange={(e) => handleEditInputChange('phone', e.target.value)}
+                  placeholder="Enter phone number"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-idnumber">ID Number</Label>
+                <Input
+                  id="edit-idnumber"
+                  type="number"
+                  value={editFormData.IDNUMBER}
+                  onChange={(e) => handleEditInputChange('IDNUMBER', e.target.value)}
+                  placeholder="Enter ID number"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-license">License Expiry Date</Label>
+                <Input
+                  id="edit-license"
+                  type="date"
+                  value={editFormData.LICENSE_EXP}
+                  onChange={(e) => handleEditInputChange('LICENSE_EXP', e.target.value)}
+                />
+              </div>
+              <div className="flex justify-end space-x-2 pt-4 sticky bottom-0 bg-background">
+                <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" className="bg-gradient-primary hover:bg-gradient-primary/90">
+                  Update Driver
+                </Button>
+              </div>
+            </form>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
