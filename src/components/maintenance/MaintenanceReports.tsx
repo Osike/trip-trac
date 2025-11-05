@@ -5,7 +5,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader as Loader2, FileDown, TrendingUp, TrendingDown, ChartBar as BarChart3, DollarSign } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Loader as Loader2, FileDown, TrendingUp, TrendingDown, ChartBar as BarChart3, DollarSign, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -44,10 +48,20 @@ export default function MaintenanceReports() {
   const [dateRange, setDateRange] = useState<any>({});
   const [selectedTruck, setSelectedTruck] = useState<string>('all');
   const [trucks, setTrucks] = useState<{ id: string; plate_number: string; model: string }[]>([]);
+  const [trips, setTrips] = useState<{ id: string; origin: string; destination: string }[]>([]);
   const [activeTab, setActiveTab] = useState<'profits' | 'maintenance'>('profits');
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    truck_id: '',
+    trip_id: '',
+    description: '',
+    cost: '',
+    maintenance_date: format(new Date(), 'yyyy-MM-dd')
+  });
 
   useEffect(() => {
     fetchTrucks();
+    fetchTrips();
     fetchReports();
   }, []);
 
@@ -72,6 +86,27 @@ export default function MaintenanceReports() {
     } catch (error: any) {
       console.error('Unexpected error:', error);
       toast.error('Failed to fetch trucks');
+    }
+  };
+
+  const fetchTrips = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('trips')
+        .select('id, origin, destination')
+        .in('status', ['ongoing', 'scheduled'])
+        .order('scheduled_date', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching trips:', error);
+        toast.error('Failed to fetch trips');
+        return;
+      }
+
+      setTrips(data || []);
+    } catch (error: any) {
+      console.error('Unexpected error:', error);
+      toast.error('Failed to fetch trips');
     }
   };
 
@@ -280,6 +315,57 @@ export default function MaintenanceReports() {
     return truckMaintenance.reduce((sum, truck) => sum + truck.total_maintenance_cost, 0);
   };
 
+  const handleFormChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const resetForm = () => {
+    setFormData({
+      truck_id: '',
+      trip_id: '',
+      description: '',
+      cost: '',
+      maintenance_date: format(new Date(), 'yyyy-MM-dd')
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.truck_id || !formData.description || !formData.cost) {
+      toast.error('Please fill in all required fields (truck, description, and cost)');
+      return;
+    }
+
+    try {
+      const maintenanceData = {
+        truck_id: formData.truck_id,
+        trip_id: formData.trip_id || null,
+        description: formData.description,
+        cost: parseFloat(formData.cost),
+        maintenance_date: formData.maintenance_date
+      };
+
+      const result = await supabase
+        .from('maintenance')
+        .insert(maintenanceData);
+
+      if (result.error) {
+        console.error('Error saving maintenance record:', result.error);
+        toast.error('Failed to save maintenance record');
+        return;
+      }
+
+      toast.success('Maintenance record created successfully');
+      setDialogOpen(false);
+      resetForm();
+      fetchReports();
+    } catch (error: any) {
+      console.error('Unexpected error:', error);
+      toast.error('An unexpected error occurred');
+    }
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex justify-between items-center">
@@ -287,6 +373,107 @@ export default function MaintenanceReports() {
           <h1 className="text-3xl font-bold">Maintenance Reports</h1>
           <p className="text-muted-foreground">Analyze maintenance costs and trip profitability</p>
         </div>
+        
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger asChild>
+            <Button onClick={() => resetForm()}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Maintenance
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Add Maintenance Record</DialogTitle>
+              <DialogDescription>
+                Create a new maintenance record for a truck
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="truck_id">Truck *</Label>
+                <Select 
+                  value={formData.truck_id} 
+                  onValueChange={(value) => handleFormChange('truck_id', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select truck" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {trucks.filter(truck => truck.id && truck.id !== "").map((truck) => (
+                      <SelectItem key={truck.id} value={truck.id}>
+                        {truck.plate_number} - {truck.model}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="trip_id">Trip (Optional)</Label>
+                <Select 
+                  value={formData.trip_id || "none"} 
+                  onValueChange={(value) => handleFormChange('trip_id', value === "none" ? "" : value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select trip (optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No trip selected</SelectItem>
+                    {trips.filter(trip => trip.id && trip.id !== "").map((trip) => (
+                      <SelectItem key={trip.id} value={trip.id}>
+                        {trip.origin} → {trip.destination}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="description">Description *</Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => handleFormChange('description', e.target.value)}
+                  placeholder="Describe the maintenance work performed"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="cost">Cost *</Label>
+                <Input
+                  id="cost"
+                  type="number"
+                  step="0.01"
+                  value={formData.cost}
+                  onChange={(e) => handleFormChange('cost', e.target.value)}
+                  placeholder="0.00"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="maintenance_date">Maintenance Date *</Label>
+                <Input
+                  id="maintenance_date"
+                  type="date"
+                  value={formData.maintenance_date}
+                  onChange={(e) => handleFormChange('maintenance_date', e.target.value)}
+                  required
+                />
+              </div>
+
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit">
+                  Add Maintenance
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Summary Statistics */}
