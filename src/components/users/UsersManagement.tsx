@@ -101,6 +101,31 @@ export const UsersManagement = () => {
     }
   };
 
+  const handleDeleteUser = async (userId: string, userName: string) => {
+    if (!confirm(`Are you sure you want to delete ${userName}? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('user_id', userId);
+
+      if (error) {
+        toast.error('Failed to delete user');
+        console.error('Error:', error);
+        return;
+      }
+
+      toast.success('User deleted successfully');
+      fetchUsers();
+    } catch (error) {
+      toast.error('An unexpected error occurred');
+      console.error('Error:', error);
+    }
+  };
+
   const getRoleIcon = (role: string) => {
     switch (role.toLowerCase()) {
       case 'admin': return Shield;
@@ -253,14 +278,20 @@ export const UsersManagement = () => {
                         <Badge variant={user.is_verified ? 'default' : 'secondary'}>
                           {user.is_verified ? 'Verified' : 'Unverified'}
                         </Badge>
-                        <div className="flex space-x-2">
-                          <Button variant="outline" size="sm">
-                            Edit
-                          </Button>
-                          <Button variant="outline" size="sm">
-                            {user.is_verified ? 'Suspend' : 'Verify'}
-                          </Button>
-                        </div>
+                        {user.role === 'driver' && (
+                          <div className="flex space-x-2">
+                            <Button variant="outline" size="sm">
+                              Edit
+                            </Button>
+                            <Button 
+                              variant="destructive" 
+                              size="sm"
+                              onClick={() => handleDeleteUser(user.user_id, user.name)}
+                            >
+                              Suspend
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
