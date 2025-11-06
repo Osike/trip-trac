@@ -5,10 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
-import { Plus, Search, Users, Shield, Car } from "lucide-react";
+import { Plus, Search, Users, Shield, Car, AlertTriangle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface Profile {
   id: string;
@@ -211,14 +212,60 @@ export const UsersManagement = () => {
     }
   };
 
+  const isLicenseExpiring = (licenseExpDate?: string) => {
+    if (!licenseExpDate) return false;
+    const expiryDate = new Date(licenseExpDate);
+    const today = new Date();
+    const daysUntilExpiry = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    return daysUntilExpiry <= 30 && daysUntilExpiry >= 0;
+  };
+
+  const isLicenseExpired = (licenseExpDate?: string) => {
+    if (!licenseExpDate) return false;
+    const expiryDate = new Date(licenseExpDate);
+    const today = new Date();
+    return expiryDate < today;
+  };
+
   const filteredUsers = users.filter(user =>
     user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (user.phone && user.phone.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
+  const driversWithExpiringLicenses = users.filter(
+    user => user.role === 'driver' && (isLicenseExpiring(user.LICENSE_EXP) || isLicenseExpired(user.LICENSE_EXP))
+  );
+
   return (
     <div className="space-y-6 p-6">
+      {driversWithExpiringLicenses.length > 0 && (
+        <Alert variant="destructive" className="border-destructive/50 bg-destructive/10">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>License Expiry Warnings</AlertTitle>
+          <AlertDescription>
+            <div className="mt-2 space-y-1">
+              {driversWithExpiringLicenses.map(driver => {
+                const expired = isLicenseExpired(driver.LICENSE_EXP);
+                const daysUntilExpiry = driver.LICENSE_EXP 
+                  ? Math.ceil((new Date(driver.LICENSE_EXP).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+                  : 0;
+                return (
+                  <div key={driver.id} className="text-sm">
+                    <span className="font-medium">{driver.name}</span>
+                    {expired ? (
+                      <span className="text-destructive"> - License EXPIRED on {new Date(driver.LICENSE_EXP!).toLocaleDateString()}</span>
+                    ) : (
+                      <span> - License expires in {daysUntilExpiry} days ({new Date(driver.LICENSE_EXP!).toLocaleDateString()})</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+      
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">User Management</h1>
@@ -345,9 +392,21 @@ export const UsersManagement = () => {
                           <h3 className="font-medium text-foreground">{user.name}</h3>
                           {user.role === 'driver' ? (
                             <>
-                              <p className="text-sm text-muted-foreground">
-                                License Expiry: {user.LICENSE_EXP ? new Date(user.LICENSE_EXP).toLocaleDateString() : 'Not set'}
-                              </p>
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm text-muted-foreground">
+                                  License Expiry: {user.LICENSE_EXP ? new Date(user.LICENSE_EXP).toLocaleDateString() : 'Not set'}
+                                </p>
+                                {isLicenseExpired(user.LICENSE_EXP) && (
+                                  <Badge variant="destructive" className="text-xs">
+                                    Expired
+                                  </Badge>
+                                )}
+                                {isLicenseExpiring(user.LICENSE_EXP) && !isLicenseExpired(user.LICENSE_EXP) && (
+                                  <Badge variant="destructive" className="text-xs bg-orange-500 hover:bg-orange-600">
+                                    Expiring Soon
+                                  </Badge>
+                                )}
+                              </div>
                               <p className="text-xs text-muted-foreground">{user.phone || 'No phone'}</p>
                             </>
                           ) : (
