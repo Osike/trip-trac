@@ -32,6 +32,7 @@ export const UsersManagement = () => {
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
+    email: "",
     role: "driver" as 'admin' | 'dispatcher' | 'driver'
   });
   const [editFormData, setEditFormData] = useState({
@@ -82,29 +83,24 @@ export const UsersManagement = () => {
     }
 
     try {
-      // Create auth user first with a temporary password
-      const tempPassword = Math.random().toString(36).slice(-8);
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: `${formData.name.toLowerCase().replace(/\s+/g, '')}@temp.com`,
-        password: tempPassword,
-        options: {
-          data: {
-            name: formData.name,
-            role: formData.role
-          }
+      const { data, error } = await supabase.functions.invoke('create-user', {
+        body: {
+          name: formData.name,
+          phone: formData.phone,
+          email: formData.email,
+          role: formData.role
         }
       });
 
-      if (authError) {
+      if (error) {
         toast.error('Failed to create user account');
-        console.error('Auth error:', authError);
+        console.error('Error:', error);
         return;
       }
 
-      // The profile should be created automatically via the trigger
-      toast.success('User created successfully');
+      toast.success(`User created successfully! Email: ${data.email} | Password: ${data.temporaryPassword}`);
       setIsDialogOpen(false);
-      setFormData({ name: "", phone: "", role: "driver" });
+      setFormData({ name: "", phone: "", email: "", role: "driver" });
       fetchUsers();
     } catch (error) {
       toast.error('An unexpected error occurred');
@@ -244,6 +240,16 @@ export const UsersManagement = () => {
                     onChange={(e) => handleInputChange('name', e.target.value)}
                     placeholder="Enter full name"
                     required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email (Optional)</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => handleInputChange('email', e.target.value)}
+                    placeholder="user@example.com (leave empty for auto-generated)"
                   />
                 </div>
                 <div className="space-y-2">
