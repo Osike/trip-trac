@@ -798,7 +798,7 @@ export const TripsManagement = () => {
                           <MapPin className="h-5 w-5 text-primary-foreground" />
                         </div>
                         <div>
-                          <h3 className="font-bold text-lg">{trip.id}</h3>
+                          <h3 className="font-bold text-lg">{trip.origin} → {trip.destination}</h3>
                           <p className="text-sm text-muted-foreground">{trip.customer}</p>
                         </div>
                       </div>
