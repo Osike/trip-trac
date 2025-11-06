@@ -23,8 +23,10 @@ Deno.serve(async (req) => {
     // Generate a temporary password
     const tempPassword = Math.random().toString(36).slice(-10) + Math.random().toString(36).slice(-10)
     
-    // Use provided email or generate one from name
-    const userEmail = email || `${name.toLowerCase().replace(/\s+/g, '.')}@temp.logistics.com`
+    // Use provided email or generate a unique one from name with timestamp
+    const userEmail = email || `${name.toLowerCase().replace(/\s+/g, '.')}.${Date.now()}@temp.logistics.com`
+
+    console.log('Creating user with email:', userEmail)
 
     // Create the auth user with admin API
     const { data: userData, error: userError } = await supabaseAdmin.auth.admin.createUser({
@@ -38,6 +40,21 @@ Deno.serve(async (req) => {
     })
 
     if (userError) {
+      console.error('User creation error:', userError)
+      
+      // Handle specific error cases
+      if (userError.message.includes('already been registered')) {
+        return new Response(
+          JSON.stringify({ 
+            error: 'A user with this email already exists. Please use a different email address.' 
+          }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 400 
+          }
+        )
+      }
+      
       throw userError
     }
 
