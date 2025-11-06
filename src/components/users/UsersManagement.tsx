@@ -15,7 +15,7 @@ interface Profile {
   user_id: string;
   name: string;
   phone?: string;
-  role: 'admin' | 'dispatcher' | 'driver';
+  role: 'admin' | 'driver';
   is_verified: boolean;
   created_at: string;
   updated_at: string;
@@ -33,7 +33,7 @@ export const UsersManagement = () => {
     name: "",
     phone: "",
     email: "",
-    role: "driver" as 'admin' | 'dispatcher' | 'driver'
+    role: "driver" as 'admin' | 'driver'
   });
   const [editFormData, setEditFormData] = useState({
     id: "",
@@ -53,6 +53,7 @@ export const UsersManagement = () => {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
+        .in('role', ['admin', 'driver'])
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -61,7 +62,7 @@ export const UsersManagement = () => {
         return;
       }
 
-      setUsers(data || []);
+      setUsers((data || []) as Profile[]);
     } catch (error) {
       toast.error('An unexpected error occurred');
       console.error('Error:', error);
@@ -80,6 +81,15 @@ export const UsersManagement = () => {
     if (!formData.name.trim()) {
       toast.error('Name is required');
       return;
+    }
+
+    // Check admin limit
+    if (formData.role === 'admin') {
+      const adminCount = users.filter(u => u.role === 'admin').length;
+      if (adminCount >= 2) {
+        toast.error('Maximum of 2 admins allowed in the system');
+        return;
+      }
     }
 
     try {
@@ -188,7 +198,6 @@ export const UsersManagement = () => {
   const getRoleIcon = (role: string) => {
     switch (role.toLowerCase()) {
       case 'admin': return Shield;
-      case 'dispatcher': return Users;
       case 'driver': return Car;
       default: return Users;
     }
@@ -197,7 +206,6 @@ export const UsersManagement = () => {
   const getRoleBadgeVariant = (role: string) => {
     switch (role.toLowerCase()) {
       case 'admin': return 'destructive';
-      case 'dispatcher': return 'default';
       case 'driver': return 'secondary';
       default: return 'secondary';
     }
@@ -269,7 +277,6 @@ export const UsersManagement = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="driver">Driver</SelectItem>
-                      <SelectItem value="dispatcher">Dispatcher</SelectItem>
                       <SelectItem value="admin">Admin</SelectItem>
                     </SelectContent>
                   </Select>
@@ -336,8 +343,16 @@ export const UsersManagement = () => {
                         </div>
                         <div>
                           <h3 className="font-medium text-foreground">{user.name}</h3>
-                          <p className="text-sm text-muted-foreground">User ID: {user.user_id}</p>
-                          <p className="text-xs text-muted-foreground">{user.phone || 'No phone'}</p>
+                          {user.role === 'driver' ? (
+                            <>
+                              <p className="text-sm text-muted-foreground">
+                                License Expiry: {user.LICENSE_EXP ? new Date(user.LICENSE_EXP).toLocaleDateString() : 'Not set'}
+                              </p>
+                              <p className="text-xs text-muted-foreground">{user.phone || 'No phone'}</p>
+                            </>
+                          ) : (
+                            <p className="text-sm text-muted-foreground">{user.phone || 'No phone number'}</p>
+                          )}
                         </div>
                       </div>
                       <div className="flex items-center space-x-4">
