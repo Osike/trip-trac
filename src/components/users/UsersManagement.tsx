@@ -94,31 +94,61 @@ export const UsersManagement = () => {
     }
 
     try {
-      const { data, error } = await supabase.functions.invoke('create-user', {
-        body: {
-          name: formData.name,
-          phone: formData.phone,
-          email: formData.email,
-          role: formData.role
-        }
-      });
+      const invokeCreate = async (overrideEmail?: string) => {
+        const { data, error } = await supabase.functions.invoke('create-user', {
+          body: {
+            name: formData.name,
+            phone: formData.phone,
+            email: overrideEmail !== undefined ? overrideEmail : formData.email,
+            role: formData.role,
+          },
+        });
+        return { data, error } as { data: any; error: any };
+      };
+
+      let { data, error } = await invokeCreate();
 
       if (error) {
-        console.error('Error:', error);
-        toast.error(error.message || 'Failed to create user account');
-        return;
+        // Try to extract meaningful message from edge function error body
+        let parsedMessage = error.message as string | undefined;
+        try {
+          const match = (error.message || '').match(/\{.*\}$/);
+          if (match) {
+            const json = JSON.parse(match[0]);
+            if (json?.error) parsedMessage = json.error;
+          }
+        } catch {}
+
+        // If duplicate email, offer auto-generated email fallback
+        if (/already been registered|already exists|email_exists/i.test(error.message || '') && formData.email) {
+          const proceed = confirm(
+            'This email is already registered. Do you want to create this user with an auto-generated email instead?'
+          );
+          if (proceed) {
+            ({ data, error } = await invokeCreate(undefined)); // undefined → server will auto-generate
+          } else {
+            toast.error(parsedMessage || 'Failed to create user account');
+            return;
+          }
+        }
+
+        if (error) {
+          toast.error(parsedMessage || 'Failed to create user account');
+          return;
+        }
       }
 
-      // Check if the response contains an error (e.g., duplicate email)
       if (data?.error) {
         toast.error(data.error);
         return;
       }
 
-      toast.success(`User created successfully! Email: ${data.email} | Password: ${data.temporaryPassword}`);
-      setIsDialogOpen(false);
-      setFormData({ name: "", phone: "", email: "", role: "driver" });
-      fetchUsers();
+      if (data) {
+        toast.success(`User created successfully! Email: ${data.email} | Password: ${data.temporaryPassword}`);
+        setIsDialogOpen(false);
+        setFormData({ name: '', phone: '', email: '', role: 'driver' });
+        fetchUsers();
+      }
     } catch (error: any) {
       toast.error(error?.message || 'An unexpected error occurred');
       console.error('Error:', error);
