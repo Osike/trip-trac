@@ -57,3 +57,6 @@ verify_jwt = true
 
 [functions.auto-start-trips]
 verify_jwt = true
+
+[functions.delete-user]
+verify_jwt = true

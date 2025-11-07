@@ -138,7 +138,9 @@ export type Database = {
           avatar_url: string | null
           created_at: string
           id: string
+          IDNUMBER: number | null
           is_verified: boolean
+          LICENSE_EXP: string | null
           name: string
           phone: string | null
           role: Database["public"]["Enums"]["user_role"]
@@ -149,7 +151,9 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           id?: string
+          IDNUMBER?: number | null
           is_verified?: boolean
+          LICENSE_EXP?: string | null
           name: string
           phone?: string | null
           role?: Database["public"]["Enums"]["user_role"]
@@ -160,7 +164,9 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           id?: string
+          IDNUMBER?: number | null
           is_verified?: boolean
+          LICENSE_EXP?: string | null
           name?: string
           phone?: string | null
           role?: Database["public"]["Enums"]["user_role"]

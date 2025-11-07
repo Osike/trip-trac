@@ -158,27 +158,33 @@ export const UsersManagement = () => {
   };
 
   const handleDeleteUser = async (userId: string, userName: string) => {
-    if (!confirm(`Are you sure you want to delete ${userName}? This action cannot be undone.`)) {
+    if (!confirm(`Are you sure you want to suspend ${userName}? This will permanently delete their account.`)) {
       return;
     }
 
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('user_id', userId);
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        body: { userId },
+      });
 
       if (error) {
-        toast.error('Failed to delete user');
-        console.error('Error:', error);
+        console.error('Error deleting user:', error);
+        const errorMessage = error.message || 'Failed to delete user';
+        toast.error(errorMessage);
+        return;
+      }
+
+      if (data?.error) {
+        console.error('Error from edge function:', data.error);
+        toast.error(data.error);
         return;
       }
 
       toast.success('User deleted successfully');
       fetchUsers();
     } catch (error) {
-      toast.error('An unexpected error occurred');
-      console.error('Error:', error);
+      console.error('Error deleting user:', error);
+      toast.error('Failed to delete user');
     }
   };
 
