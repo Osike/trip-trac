@@ -104,8 +104,14 @@ export const UsersManagement = () => {
       });
 
       if (error) {
-        toast.error('Failed to create user account');
         console.error('Error:', error);
+        toast.error(error.message || 'Failed to create user account');
+        return;
+      }
+
+      // Check if the response contains an error (e.g., duplicate email)
+      if (data?.error) {
+        toast.error(data.error);
         return;
       }
 
@@ -113,8 +119,8 @@ export const UsersManagement = () => {
       setIsDialogOpen(false);
       setFormData({ name: "", phone: "", email: "", role: "driver" });
       fetchUsers();
-    } catch (error) {
-      toast.error('An unexpected error occurred');
+    } catch (error: any) {
+      toast.error(error?.message || 'An unexpected error occurred');
       console.error('Error:', error);
     }
   };
