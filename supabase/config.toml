@@ -51,3 +51,9 @@ verify_jwt = true
 
 [functions.generate-customers-report]
 verify_jwt = true
+
+[functions.create-user]
+verify_jwt = true
+
+[functions.auto-start-trips]
+verify_jwt = true
