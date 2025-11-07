@@ -94,19 +94,21 @@ export const UsersManagement = () => {
     }
 
     try {
-      const invokeCreate = async (overrideEmail?: string) => {
+      const invokeCreate = async (nextEmail?: string | null) => {
+        const payload: any = {
+          name: formData.name,
+          phone: formData.phone,
+          role: formData.role,
+        };
+        if (nextEmail) payload.email = nextEmail; // only include if truthy; omit to auto-generate on server
+
         const { data, error } = await supabase.functions.invoke('create-user', {
-          body: {
-            name: formData.name,
-            phone: formData.phone,
-            email: overrideEmail !== undefined ? overrideEmail : formData.email,
-            role: formData.role,
-          },
+          body: payload,
         });
         return { data, error } as { data: any; error: any };
       };
 
-      let { data, error } = await invokeCreate();
+      let { data, error } = await invokeCreate(formData.email || undefined);
 
       if (error) {
         // Try to extract meaningful message from edge function error body
@@ -125,7 +127,7 @@ export const UsersManagement = () => {
             'This email is already registered. Do you want to create this user with an auto-generated email instead?'
           );
           if (proceed) {
-            ({ data, error } = await invokeCreate(undefined)); // undefined → server will auto-generate
+            ({ data, error } = await invokeCreate(undefined)); // omit email to let server auto-generate
           } else {
             toast.error(parsedMessage || 'Failed to create user account');
             return;
