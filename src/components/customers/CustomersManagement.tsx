@@ -26,6 +26,8 @@ export const CustomersManagement = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     contact_person: "",
@@ -91,6 +93,57 @@ export const CustomersManagement = () => {
 
       toast.success('Customer created successfully');
       setIsDialogOpen(false);
+      setFormData({ name: "", contact_person: "", email: "", phone: "", address: "" });
+      fetchCustomers();
+    } catch (error) {
+      toast.error('An unexpected error occurred');
+      console.error('Error:', error);
+    }
+  };
+
+  const handleEdit = (customer: Customer) => {
+    setEditingCustomer(customer);
+    setFormData({
+      name: customer.name,
+      contact_person: customer.contact_person || "",
+      email: customer.email || "",
+      phone: customer.phone || "",
+      address: customer.address || ""
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.name.trim()) {
+      toast.error('Customer name is required');
+      return;
+    }
+
+    if (!editingCustomer) return;
+
+    try {
+      const { error } = await supabase
+        .from('customers')
+        .update({
+          name: formData.name,
+          contact_person: formData.contact_person || null,
+          email: formData.email || null,
+          phone: formData.phone || null,
+          address: formData.address || null
+        })
+        .eq('id', editingCustomer.id);
+
+      if (error) {
+        toast.error('Failed to update customer');
+        console.error('Error:', error);
+        return;
+      }
+
+      toast.success('Customer updated successfully');
+      setIsEditDialogOpen(false);
+      setEditingCustomer(null);
       setFormData({ name: "", contact_person: "", email: "", phone: "", address: "" });
       fetchCustomers();
     } catch (error) {
@@ -190,6 +243,79 @@ export const CustomersManagement = () => {
             </div>
           </DialogContent>
         </Dialog>
+
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="max-w-[95vw] sm:max-w-[500px] h-[90vh] max-h-[90vh] sm:h-auto sm:max-h-[85vh] overflow-hidden flex flex-col">
+            <DialogHeader className="flex-shrink-0">
+              <DialogTitle>Edit Customer</DialogTitle>
+              <DialogDescription>
+                Update customer information for your logistics services.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="overflow-y-auto flex-grow pr-1 -mr-1 pb-4">
+              <form onSubmit={handleUpdate} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-name">Company Name</Label>
+                  <Input
+                    id="edit-name"
+                    value={formData.name}
+                    onChange={(e) => handleInputChange('name', e.target.value)}
+                    placeholder="Enter company name"
+                    required
+                  />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-contact_person">Contact Person</Label>
+                    <Input
+                      id="edit-contact_person"
+                      value={formData.contact_person}
+                      onChange={(e) => handleInputChange('contact_person', e.target.value)}
+                      placeholder="Enter contact person name"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-phone">Phone</Label>
+                    <Input
+                      id="edit-phone"
+                      value={formData.phone}
+                      onChange={(e) => handleInputChange('phone', e.target.value)}
+                      placeholder="Enter phone number"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-email">Email</Label>
+                  <Input
+                    id="edit-email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => handleInputChange('email', e.target.value)}
+                    placeholder="Enter email address"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-address">Address</Label>
+                  <Textarea
+                    id="edit-address"
+                    value={formData.address}
+                    onChange={(e) => handleInputChange('address', e.target.value)}
+                    placeholder="Enter company address"
+                    rows={3}
+                  />
+                </div>
+                <div className="flex justify-end space-x-2 pt-4 sticky bottom-0 bg-background">
+                  <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" className="bg-gradient-primary hover:bg-gradient-primary/90">
+                    Update Customer
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <Card className="shadow-card">
@@ -276,7 +402,12 @@ export const CustomersManagement = () => {
                     </div>
                     
                     <div className="pt-2">
-                      <Button variant="outline" size="sm" className="w-full">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full"
+                        onClick={() => handleEdit(customer)}
+                      >
                         Edit
                       </Button>
                     </div>
