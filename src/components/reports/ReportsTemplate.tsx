@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import QRCode from "qrcode";
 
 interface ReportsTemplateProps {
   title: string;
@@ -219,7 +220,8 @@ export const ReportsTemplate: React.FC<ReportsTemplateProps> = ({
         creator: 'Champions Logistics System'
       });
 
-      filteredData.forEach((data, idx) => {
+      for (let idx = 0; idx < filteredData.length; idx++) {
+        let data = filteredData[idx];
         if (idx > 0) doc.addPage();
         // Default values fallback, use live maintenance array
         // Use actual values from trips table for route details
@@ -340,12 +342,30 @@ export const ReportsTemplate: React.FC<ReportsTemplateProps> = ({
         const balance = Number(data.rate) - totalCost;
         doc.text(`$${balance.toFixed(2)}`, 160, summaryY + 15);
 
-        // Footer
+        // Footer with QR Code
         doc.setFontSize(9);
         doc.setTextColor(120, 120, 120);
         doc.text('Champions Logistics - Professional Transportation Services', 12, 285);
         doc.text('This is an automatically generated report', 12, 290);
-      });
+        
+        // Generate QR code with page information
+        const qrData = JSON.stringify({
+          vehicle: data.vehicleNo,
+          driver: data.driver,
+          route: `${data.from} - ${data.to}`,
+          date: data.date,
+          tripDate: data.tripDate,
+          rate: data.rate,
+          balance: balance.toFixed(2)
+        });
+        
+        try {
+          const qrCodeDataUrl = await QRCode.toDataURL(qrData, { width: 60, margin: 1 });
+          doc.addImage(qrCodeDataUrl, 'PNG', 175, 278, 20, 20);
+        } catch (e) {
+          console.log('QR code not added');
+        }
+      }
 
       // Save the PDF
       const timestamp = new Date().toISOString().split('T')[0];
