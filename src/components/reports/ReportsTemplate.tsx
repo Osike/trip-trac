@@ -239,38 +239,23 @@ export const ReportsTemplate: React.FC<ReportsTemplateProps> = ({
           rate: data.rate || data.RATE || 0
         };
 
-        // Add watermark logo in the center of the page
-        const addWatermark = () => {
-          const pageWidth = doc.internal.pageSize.getWidth();
-          const pageHeight = doc.internal.pageSize.getHeight();
-          const logoSize = 100;
-          const x = (pageWidth - logoSize) / 2;
-          const y = (pageHeight - logoSize) / 2;
-          
-          // Add logo with low opacity as watermark
-          try {
-            const logoUrl = '/truck.png';
-            doc.addImage(logoUrl, 'PNG', x, y, logoSize, logoSize, undefined, 'NONE');
-            // Apply opacity by drawing a semi-transparent white rectangle over it
-            doc.setFillColor(255, 255, 255);
-            doc.setGState({ opacity: 0.1 }); // Lower opacity for more transparency
-            doc.rect(x, y, logoSize, logoSize, 'F');
-            doc.setGState({ opacity: 1 });
-          } catch (e) {
-            console.log('Watermark not added');
-          }
-        };
-
-        // Add watermark
-        addWatermark();
-
         // Header
         doc.setFillColor(41, 128, 185);
         doc.rect(0, 0, 210, 30, 'F');
+        
+        // Add logo in header
+        try {
+          const logoUrl = '/truck.png';
+          const logoSize = 20;
+          doc.addImage(logoUrl, 'PNG', 12, 5, logoSize, logoSize);
+        } catch (e) {
+          console.log('Logo not added');
+        }
+        
         doc.setTextColor(255, 255, 255);
         doc.setFontSize(22);
         doc.setFont('helvetica', 'bold');
-        doc.text('CHAMPIONS LOGISTICS', 12, 15);
+        doc.text('CHAMPIONS LOGISTICS', 37, 15);
         doc.setFontSize(12);
         doc.setFont('helvetica', 'normal');
         doc.text('Vehicle Trips Report', 12, 23);
