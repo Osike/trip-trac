@@ -507,6 +507,7 @@ export const TripsManagement = () => {
         FUEL: form.fuel ? Number(form.fuel) : null,
         MILEAGE: form.mileage ? Number(form.mileage) : null,
         "ROAD TOLLS": form.road_tolls ? Number(form.road_tolls) : null,
+        comments: form.comments || null,
         status: 'scheduled' as const
       };
 

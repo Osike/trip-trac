@@ -177,6 +177,7 @@ export type Database = {
       }
       trips: {
         Row: {
+          comments: string | null
           created_at: string
           customer_id: string
           destination: string
@@ -196,6 +197,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          comments?: string | null
           created_at?: string
           customer_id: string
           destination: string
@@ -215,6 +217,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          comments?: string | null
           created_at?: string
           customer_id?: string
           destination?: string
