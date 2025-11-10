@@ -360,8 +360,12 @@ export const ReportsTemplate: React.FC<ReportsTemplateProps> = ({
         });
         
         try {
-          const qrCodeDataUrl = await QRCode.toDataURL(qrData, { width: 60, margin: 1 });
-          doc.addImage(qrCodeDataUrl, 'PNG', 175, 278, 20, 20);
+          const qrCodeDataUrl = await QRCode.toDataURL(qrData, { 
+            width: 200, 
+            margin: 1,
+            errorCorrectionLevel: 'M'
+          });
+          doc.addImage(qrCodeDataUrl, 'PNG', 180, 280, 15, 15);
         } catch (e) {
           console.log('QR code not added');
         }
