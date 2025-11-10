@@ -349,15 +349,7 @@ export const ReportsTemplate: React.FC<ReportsTemplateProps> = ({
         doc.text('This is an automatically generated report', 12, 290);
         
         // Generate QR code with page information
-        const qrData = JSON.stringify({
-          vehicle: data.vehicleNo,
-          driver: data.driver,
-          route: `${data.from} - ${data.to}`,
-          date: data.date,
-          tripDate: data.tripDate,
-          rate: data.rate,
-          balance: balance.toFixed(2)
-        });
+        const qrData = `Vehicle: ${data.vehicleNo} | Driver: ${data.driver} | Route: ${data.from} - ${data.to} | Date: ${data.date} | Rate: $${data.rate} | Balance: $${balance.toFixed(2)}`;
         
         try {
           const qrCodeDataUrl = await QRCode.toDataURL(qrData, { 
