@@ -15,7 +15,8 @@ export const TripsReport = () => {
     { key: "distance", label: "Distance" },
     { key: "duration", label: "Duration" },
     { key: "rate", label: "Rate ($)" },
-    { key: "profit", label: "Profit ($)" }
+    { key: "profit", label: "Profit ($)" },
+    { key: "comments", label: "Comments" }
   ];
 
   // Define filter options

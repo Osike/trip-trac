@@ -38,6 +38,7 @@ serve(async (req) => {
         "MILEAGE",
         "SALARY",
         "ROAD TOLLS",
+        comments,
         created_at,
         updated_at,
         customers!inner(name, contact_person, email),
@@ -128,6 +129,7 @@ serve(async (req) => {
         duration: trip.duration ? `${trip.duration} hrs` : 'N/A',
         truck: (trip.trucks as any) ? `${(trip.trucks as any).plate_number} (${(trip.trucks as any).model})` : 'N/A',
         driver: (trip.profiles as any)?.name || 'Unassigned',
+        comments: trip.comments || 'N/A',
         created_at: new Date(trip.created_at).toLocaleDateString(),
         // Include maintenance records for detailed display
         maintenance: tripMaintenance
@@ -142,7 +144,7 @@ serve(async (req) => {
     }
 
     // Generate CSV for download
-    const csvHeader = 'Trip ID,Customer,Origin,Destination,Status,Scheduled Date,Rate,Fuel Cost,Mileage,Salary,Road Tolls,Maintenance Cost,Profit,Distance,Duration,Truck,Driver,Created Date\n'
+    const csvHeader = 'Trip ID,Customer,Origin,Destination,Status,Scheduled Date,Rate,Fuel Cost,Mileage,Salary,Road Tolls,Maintenance Cost,Profit,Distance,Duration,Truck,Driver,Comments,Created Date\n'
     const csvRows = transformedTrips.map(trip => {
       return [
         trip.id,
@@ -162,6 +164,7 @@ serve(async (req) => {
         trip.duration,
         trip.truck,
         trip.driver,
+        trip.comments,
         trip.created_at
       ].map(field => `"${field}"`).join(',')
     }).join('\n')
