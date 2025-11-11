@@ -232,6 +232,7 @@ export const ReportsTemplate: React.FC<ReportsTemplateProps> = ({
           from: typeof data.origin === 'string' ? data.origin : 'N/A',
           to: typeof data.destination === 'string' ? data.destination : 'N/A',
           tripDate: data.scheduled_date || data.tripDate || 'N/A',
+          comments: data.comments || 'N/A',
           maintenanceItems: Array.isArray(data.maintenance) ? data.maintenance.map(m => ({ item: m.description || 'Maintenance', cost: m.cost })) : [],
           roadToll: data.road_tolls || data.roadToll || 0,
           mileage: data.mileage || 0,
@@ -281,13 +282,25 @@ export const ReportsTemplate: React.FC<ReportsTemplateProps> = ({
         doc.text(`${data.from} - ${data.to}`, 130, 45, { maxWidth: 70 });
         doc.text('TRIP DATE:', 110, 52);
         doc.text(data.tripDate ? new Date(data.tripDate).toLocaleDateString() : 'N/A', 135, 52);
+        
+        // Comments section
+        if (data.comments && data.comments !== 'N/A') {
+          doc.setFontSize(10);
+          doc.setTextColor(41, 128, 185);
+          doc.text('COMMENTS:', 12, 59);
+          doc.setTextColor(60, 60, 60);
+          doc.setFontSize(9);
+          const splitComments = doc.splitTextToSize(data.comments, 186);
+          doc.text(splitComments, 12, 64);
+        }
 
         // Maintenance Items Table
+        const maintenanceY = data.comments && data.comments !== 'N/A' ? 75 : 62;
         doc.setFontSize(12);
         doc.setTextColor(41, 128, 185);
-        doc.text('MAINTENANCE', 12, 62);
+        doc.text('MAINTENANCE', 12, maintenanceY);
         doc.setTextColor(60, 60, 60);
-        let finalY = 65;
+        let finalY = maintenanceY + 3;
         autoTable(doc, {
           head: [['ITEM', 'COST']],
           body: (data.maintenanceItems || []).map((item) => [item.item, `$${item.cost?.toFixed(2) || '0.00'}`]),
