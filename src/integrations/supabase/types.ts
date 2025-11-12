@@ -133,12 +133,44 @@ export type Database = {
           },
         ]
       }
+      otp_verifications: {
+        Row: {
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          otp_code: string
+          user_data: Json | null
+          verified: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          otp_code: string
+          user_data?: Json | null
+          verified?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          otp_code?: string
+          user_data?: Json | null
+          verified?: boolean | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
           created_at: string
           id: string
+          IDNUMBER: number | null
           is_verified: boolean
+          LICENSE_EXP: string | null
           name: string
           phone: string | null
           role: Database["public"]["Enums"]["user_role"]
@@ -149,7 +181,9 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           id?: string
+          IDNUMBER?: number | null
           is_verified?: boolean
+          LICENSE_EXP?: string | null
           name: string
           phone?: string | null
           role?: Database["public"]["Enums"]["user_role"]
@@ -160,7 +194,9 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           id?: string
+          IDNUMBER?: number | null
           is_verified?: boolean
+          LICENSE_EXP?: string | null
           name?: string
           phone?: string | null
           role?: Database["public"]["Enums"]["user_role"]
@@ -171,6 +207,7 @@ export type Database = {
       }
       trips: {
         Row: {
+          comments: string | null
           created_at: string
           customer_id: string
           destination: string
@@ -190,6 +227,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          comments?: string | null
           created_at?: string
           customer_id: string
           destination: string
@@ -209,6 +247,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          comments?: string | null
           created_at?: string
           customer_id?: string
           destination?: string
@@ -297,6 +336,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_expired_otps: { Args: never; Returns: undefined }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["user_role"]

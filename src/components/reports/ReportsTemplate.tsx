@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import QRCode from "qrcode";
 
 interface ReportsTemplateProps {
   title: string;
@@ -219,7 +220,8 @@ export const ReportsTemplate: React.FC<ReportsTemplateProps> = ({
         creator: 'Champions Logistics System'
       });
 
-      filteredData.forEach((data, idx) => {
+      for (let idx = 0; idx < filteredData.length; idx++) {
+        let data = filteredData[idx];
         if (idx > 0) doc.addPage();
         // Default values fallback, use live maintenance array
         // Use actual values from trips table for route details
@@ -230,6 +232,7 @@ export const ReportsTemplate: React.FC<ReportsTemplateProps> = ({
           from: typeof data.origin === 'string' ? data.origin : 'N/A',
           to: typeof data.destination === 'string' ? data.destination : 'N/A',
           tripDate: data.scheduled_date || data.tripDate || 'N/A',
+          comments: data.comments || 'N/A',
           maintenanceItems: Array.isArray(data.maintenance) ? data.maintenance.map(m => ({ item: m.description || 'Maintenance', cost: m.cost })) : [],
           roadToll: data.road_tolls || data.roadToll || 0,
           mileage: data.mileage || 0,
@@ -239,38 +242,23 @@ export const ReportsTemplate: React.FC<ReportsTemplateProps> = ({
           rate: data.rate || data.RATE || 0
         };
 
-        // Add watermark logo in the center of the page
-        const addWatermark = () => {
-          const pageWidth = doc.internal.pageSize.getWidth();
-          const pageHeight = doc.internal.pageSize.getHeight();
-          const logoSize = 100;
-          const x = (pageWidth - logoSize) / 2;
-          const y = (pageHeight - logoSize) / 2;
-          
-          // Add logo with low opacity as watermark
-          try {
-            const logoUrl = '/truck.png';
-            doc.addImage(logoUrl, 'PNG', x, y, logoSize, logoSize, undefined, 'NONE');
-            // Apply opacity by drawing a semi-transparent white rectangle over it
-            doc.setFillColor(255, 255, 255);
-            doc.setGState({ opacity: 0.1 }); // Lower opacity for more transparency
-            doc.rect(x, y, logoSize, logoSize, 'F');
-            doc.setGState({ opacity: 1 });
-          } catch (e) {
-            console.log('Watermark not added');
-          }
-        };
-
-        // Add watermark
-        addWatermark();
-
         // Header
         doc.setFillColor(41, 128, 185);
         doc.rect(0, 0, 210, 30, 'F');
+        
+        // Add logo in header
+        try {
+          const logoUrl = '/truck.png';
+          const logoSize = 20;
+          doc.addImage(logoUrl, 'PNG', 12, 5, logoSize, logoSize);
+        } catch (e) {
+          console.log('Logo not added');
+        }
+        
         doc.setTextColor(255, 255, 255);
         doc.setFontSize(22);
         doc.setFont('helvetica', 'bold');
-        doc.text('CHAMPIONS LOGISTICS', 12, 15);
+        doc.text('CHAMPIONS LOGISTICS', 37, 15);
         doc.setFontSize(12);
         doc.setFont('helvetica', 'normal');
         doc.text('Vehicle Trips Report', 12, 23);
@@ -294,13 +282,25 @@ export const ReportsTemplate: React.FC<ReportsTemplateProps> = ({
         doc.text(`${data.from} - ${data.to}`, 130, 45, { maxWidth: 70 });
         doc.text('TRIP DATE:', 110, 52);
         doc.text(data.tripDate ? new Date(data.tripDate).toLocaleDateString() : 'N/A', 135, 52);
+        
+        // Comments section
+        if (data.comments && data.comments !== 'N/A') {
+          doc.setFontSize(10);
+          doc.setTextColor(41, 128, 185);
+          doc.text('COMMENTS:', 12, 59);
+          doc.setTextColor(60, 60, 60);
+          doc.setFontSize(9);
+          const splitComments = doc.splitTextToSize(data.comments, 186);
+          doc.text(splitComments, 12, 64);
+        }
 
         // Maintenance Items Table
+        const maintenanceY = data.comments && data.comments !== 'N/A' ? 75 : 62;
         doc.setFontSize(12);
         doc.setTextColor(41, 128, 185);
-        doc.text('MAINTENANCE', 12, 62);
+        doc.text('MAINTENANCE', 12, maintenanceY);
         doc.setTextColor(60, 60, 60);
-        let finalY = 65;
+        let finalY = maintenanceY + 3;
         autoTable(doc, {
           head: [['ITEM', 'COST']],
           body: (data.maintenanceItems || []).map((item) => [item.item, `$${item.cost?.toFixed(2) || '0.00'}`]),
@@ -355,12 +355,26 @@ export const ReportsTemplate: React.FC<ReportsTemplateProps> = ({
         const balance = Number(data.rate) - totalCost;
         doc.text(`$${balance.toFixed(2)}`, 160, summaryY + 15);
 
-        // Footer
+        // Footer with QR Code
         doc.setFontSize(9);
         doc.setTextColor(120, 120, 120);
         doc.text('Champions Logistics - Professional Transportation Services', 12, 285);
         doc.text('This is an automatically generated report', 12, 290);
-      });
+        
+        // Generate QR code with page information
+        const qrData = `Vehicle: ${data.vehicleNo} | Driver: ${data.driver} | Route: ${data.from} - ${data.to} | Date: ${data.date} | Rate: $${data.rate} | Balance: $${balance.toFixed(2)}`;
+        
+        try {
+          const qrCodeDataUrl = await QRCode.toDataURL(qrData, { 
+            width: 200, 
+            margin: 1,
+            errorCorrectionLevel: 'M'
+          });
+          doc.addImage(qrCodeDataUrl, 'PNG', 180, 280, 15, 15);
+        } catch (e) {
+          console.log('QR code not added');
+        }
+      }
 
       // Save the PDF
       const timestamp = new Date().toISOString().split('T')[0];

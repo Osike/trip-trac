@@ -1,8 +1,6 @@
 import { StatsCard } from "@/components/ui/stats-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Users, Truck, MapPin, Building2, TrendingUp, ChevronDown, FileText, Loader2 } from "lucide-react";
+import { Users, Truck, MapPin, Building2, TrendingUp, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -148,103 +146,12 @@ export const DashboardOverview = () => {
     }
   };
 
-  const handleReportGeneration = async (reportType: string) => {
-    try {
-      toast.loading(`Generating ${reportType.toLowerCase()} report...`);
-      
-      const { supabase } = await import('@/integrations/supabase/client');
-      
-      let functionName = '';
-      switch (reportType) {
-        case 'Trips':
-          functionName = 'generate-trips-report';
-          break;
-        case 'Trucks':
-          functionName = 'generate-trucks-report';
-          break;
-        case 'Customers':
-          functionName = 'generate-customers-report';
-          break;
-        default:
-          toast.error('Invalid report type selected');
-          return;
-      }
-
-      const { data, error } = await supabase.functions.invoke(functionName);
-      
-      if (error) {
-        console.error('Error generating report:', error);
-        toast.error('Failed to generate report');
-        return;
-      }
-
-      // Create blob and download
-      const blob = new Blob([data], { type: 'text/csv' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${reportType.toLowerCase()}-report-${new Date().toISOString().split('T')[0]}.csv`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-      
-      toast.success(`${reportType} report generated successfully!`);
-    } catch (error) {
-      console.error('Error:', error);
-      toast.error('Failed to generate report');
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/30 to-background">
       <div className="space-y-8 p-6 max-w-7xl mx-auto">
-        <div className="flex items-center justify-between">
-          <div className="space-y-2">
-            <h1 className="text-4xl font-bold text-foreground tracking-tight">Dashboard</h1>
-            <p className="text-lg text-muted-foreground">Your logistics command center</p>
-          </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button className="bg-gradient-primary hover:opacity-90 shadow-lg transition-all duration-300 font-medium px-6 py-3">
-                <FileText className="h-4 w-4 mr-2" />
-                Quick Reports
-                <ChevronDown className="h-4 w-4 ml-2" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 bg-card/95 backdrop-blur-md border border-border/50 shadow-xl z-50 rounded-lg">
-              <DropdownMenuItem 
-                onClick={() => handleReportGeneration('Trips')}
-                className="cursor-pointer hover:bg-secondary/80 transition-colors duration-200 px-4 py-3 rounded-md mx-1 first:mt-1 last:mb-1"
-              >
-                <MapPin className="h-4 w-4 mr-3 text-primary" />
-                <div>
-                  <p className="font-medium">Trips Report</p>
-                  <p className="text-xs text-muted-foreground">Export trip data</p>
-                </div>
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={() => handleReportGeneration('Trucks')}
-                className="cursor-pointer hover:bg-secondary/80 transition-colors duration-200 px-4 py-3 rounded-md mx-1"
-              >
-                <Truck className="h-4 w-4 mr-3 text-primary" />
-                <div>
-                  <p className="font-medium">Trucks Report</p>
-                  <p className="text-xs text-muted-foreground">Fleet analytics</p>
-                </div>
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={() => handleReportGeneration('Customers')}
-                className="cursor-pointer hover:bg-secondary/80 transition-colors duration-200 px-4 py-3 rounded-md mx-1"
-              >
-                <Building2 className="h-4 w-4 mr-3 text-primary" />
-                <div>
-                  <p className="font-medium">Customers Report</p>
-                  <p className="text-xs text-muted-foreground">Client data export</p>
-                </div>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+        <div className="space-y-2">
+          <h1 className="text-4xl font-bold text-foreground tracking-tight">Dashboard</h1>
+          <p className="text-lg text-muted-foreground">Your logistics command center</p>
         </div>
 
         {/* Stats Grid */}

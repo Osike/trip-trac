@@ -507,6 +507,7 @@ export const TripsManagement = () => {
         FUEL: form.fuel ? Number(form.fuel) : null,
         MILEAGE: form.mileage ? Number(form.mileage) : null,
         "ROAD TOLLS": form.road_tolls ? Number(form.road_tolls) : null,
+        comments: form.comments || null,
         status: 'scheduled' as const
       };
 
@@ -798,7 +799,7 @@ export const TripsManagement = () => {
                           <MapPin className="h-5 w-5 text-primary-foreground" />
                         </div>
                         <div>
-                          <h3 className="font-bold text-lg">{trip.id}</h3>
+                          <h3 className="font-bold text-lg">{trip.origin} → {trip.destination}</h3>
                           <p className="text-sm text-muted-foreground">{trip.customer}</p>
                         </div>
                       </div>
